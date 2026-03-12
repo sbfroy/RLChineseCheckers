@@ -11,6 +11,16 @@ For IKT 460 (RL) base Chinese Checkers
 - ~~A pin maynot go into a 'coloured triangle' unless it is either its source or its destination~~ A pin may go into any coloured region, provided it is a valid move
 - There is no capturing
 
+## Setup
+```bash
+conda activate checkers
+```
+If conda is not found, run:
+```bash
+~/miniconda3/bin/conda init bash
+source ~/.bashrc
+```
+
 ## single system
 Designed to be played on a single system (no separate teams joining from separate systems)
 
