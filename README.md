@@ -11,15 +11,29 @@ For IKT 460 (RL) base Chinese Checkers
 - ~~A pin maynot go into a 'coloured triangle' unless it is either its source or its destination~~ A pin may go into any coloured region, provided it is a valid move
 - There is no capturing
 
-## Setup
-```bash
-conda activate checkers
-```
-If conda is not found, run:
-```bash
-~/miniconda3/bin/conda init bash
-source ~/.bashrc
-```
+## Multi system
+
+game.py :: server side (run on terminal 1)
+
+player.py :: client side (run on terminal 2/3/4... Each terminal is a player.)
+
+In game.py ::
+  Options are Create/Status/Quit
+  Typing Create + Enter - creates new game
+  Typing Status + Enter - shows status of games in current session
+
+In player.py ::
+  Enter player name
+  Press Enter when you get message 'Press enter to send Start'
+
+  **You'll need to replace the code inside 'PLAYING LOGIC' to your own logic.**
+
+
+- You can see the scoring inside game.py
+- game log is stored in folder 'games'
+- get_state as player gives you access to game board, moves made by all players, timings, game status etc.
+- Change TURN_TIMEOUT_SEC and GAME_TIME_LIMIT_SEC accordingly for training. *Please let me know your average time taken per move and average total time to finish a game. Once I recieve responses from atleast 5 different teams, I will base the final values of these parameters accordingly.*
+
 
 ## single system
 Designed to be played on a single system (no separate teams joining from separate systems)
@@ -66,11 +80,16 @@ Once you enter 'start_game', you'll see
       - If it was a valid move, see update on Ascii/Tkinter, and control moves to the next player.
       - Else, current player's turn continues
      
-  # Current Limitations/Expected Changes
-  - There is no logic implemented yet for checking if a player has won - Expect changes
-  - Expect changes in Starting a Game/Assigning colours.
-  - There is no logic implemented yet for storing moves made - Expect changes
-  - There is no logic implemented yet to indicate 'Pass' on a turn - Expect changes
-  - There is no logic implemented yet to timeout a players turn - Expect changes
-  - There is no logic implemented yet for scoring - Expect changes (will be based on time taken, total number of moves, number of pins successfully moved to opposite colour)
-  - There is no logic implemented yet for maximum allowable time per game - Expect changes
+  # ~~Current Limitations/Expected Changes~~ Updates
+  - ~~There is no logic implemented yet for checking if a player has won - Expect changes~~ Game terminates when 1 player wins. Game also terminates if all players excpet 1 Draw (have no possible valid moves).
+  - ~~Expect changes in Starting a Game/Assigning colours.~~
+  - ~~There is no logic implemented yet for storing moves made - Expect changes~~ Game moves are stored in game-specific log text file in folder games.
+  - ~~There is no logic implemented yet to indicate 'Pass' on a turn - Expect changes~~ No explicit 'Pass', but timeout implemented for a turn
+  - ~~There is no logic implemented yet to timeout a players turn - Expect changes~~ Timeout for total gameplay implemented
+  - ~~There is no logic implemented yet for scoring - Expect changes (will be based on time taken, total number of moves, number of pins successfully moved to opposite colour)~~ Scoring ::
+    - time score : max(0.0, 100.0 - time_taken_sec) // time_taken_sec is total time taken for all moves made by player, less total time, more time score
+    - move score : math.exp(-((move_count - 45) ** 2) / (2 * ((4 if move_count < 45 else 18) ** 2))) // move_count is total number of moves made by player.assymetrical Gaussian. max score if move_count around 45, penalized both for too few movements and too many movements.
+    - pin score : pins_in_goal * 100.0
+    - distance score :  max(0.0, 200.0 - total_dist) // total_dist is sum of min(distance(pin_not_in_goal, target_colour))
+    - total score : time score + move score + pin score + distance score
+  - ~~There is no logic implemented yet for maximum allowable time per game - Expect changes~~ See above
