@@ -1,0 +1,43 @@
+# Fast bootstrap training config
+# No MCTS during self-play — much faster iteration
+# Use this to pre-train the network before switching to full MCTS training
+
+model:
+  num_res_blocks: 6
+  trunk_channels: 128
+  policy_channels: 32
+  value_hidden: 128
+
+training:
+  num_iterations: 100
+  num_games_per_iteration: 20
+  num_players: 2
+  batch_size: 128
+  epochs_per_iteration: 5
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  buffer_capacity: 100000
+  min_buffer_size: 256
+  temperature: 1.0
+  checkpoint_dir: checkpoints/bootstrap
+  checkpoint_every: 20
+  eval_every: 50
+  device: cpu
+
+mcts:
+  num_simulations: 0  # no MCTS for fast bootstrap
+  c_puct: 1.5
+  temperature: 1.0
+
+rewards:
+  win_reward: 1.0
+  loss_reward: -1.0
+  draw_reward: -0.5
+  max_moves_reward: -0.3
+  pin_goal_weight: 0.3
+  distance_weight: 0.01
+  lagging_weight: -0.005
+  home_exit_weight: 0.05
+
+evaluation:
+  num_games: 10
