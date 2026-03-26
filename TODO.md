@@ -1,3 +1,0 @@
-- Run through the spec md file, one phase at a time!
-
-- But firstly Rupsa should implement finish game and stuff...
