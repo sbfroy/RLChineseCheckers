@@ -9,6 +9,15 @@ __pycache__/
 dist/
 build/
 
+# Training artifacts
+checkpoints/
+*.pt
+wandb/
+runs/
+
+# Pytest
+.pytest_cache/
+
 # IDE
 .vscode/
 .idea/
