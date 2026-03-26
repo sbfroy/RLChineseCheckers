@@ -9,8 +9,11 @@ Usage:
 """
 
 import argparse
+import json
 import os
 import sys
+import traceback
+from datetime import datetime
 import yaml
 import torch
 
@@ -116,6 +119,9 @@ def main():
     parser.add_argument("--device", type=str, default=None,
                        help="Device: cpu or cuda (auto-detects if not set)")
     parser.add_argument("--no-eval", action="store_true")
+    parser.add_argument("--phase", type=str, default="unknown",
+                       choices=["bootstrap", "mcts_light", "mcts_full", "unknown"],
+                       help="Training phase name (for autonomous tracking)")
     args = parser.parse_args()
 
     # Auto-detect GPU if not specified
@@ -160,19 +166,44 @@ def main():
         mcts=mcts,
     )
 
+    # Set phase and config info for status tracking
+    trainer.phase = args.phase
+    trainer.config_file = args.config
+
     # Build evaluator
     evaluator = None
     if not args.no_eval:
         evaluator = make_evaluator(cfg, cfg.get("evaluation", {}), device=train_cfg.device)
 
-    # Train
-    trainer.train(evaluator=evaluator)
+    # Train with status tracking
+    try:
+        trainer.train(evaluator=evaluator)
 
-    # Final evaluation
-    print("\n=== Final Evaluation ===")
-    agent = ChineseCheckersAgent(model=model, mcts_simulations=50, temperature=0.1,
-                                 device=train_cfg.device)
-    evaluate_agent(agent, num_games=10, verbose=True)
+        # Final evaluation (skip if --no-eval)
+        if not args.no_eval:
+            print("\n=== Final Evaluation ===")
+            agent = ChineseCheckersAgent(model=model, mcts_simulations=50, temperature=0.1,
+                                         device=train_cfg.device)
+            evaluate_agent(agent, num_games=10, verbose=True)
+
+    except Exception as e:
+        # Write failed status so the autonomous agent knows
+        status_file = os.path.join(os.path.dirname(__file__), "training_status.json")
+        with open(status_file, "w") as f:
+            json.dump({
+                "status": "failed",
+                "phase": args.phase,
+                "run_name": train_cfg.run_name,
+                "config_file": args.config,
+                "error": str(e),
+                "traceback": traceback.format_exc(),
+                "failed_at": datetime.now().isoformat(),
+                "current_iteration": trainer.iteration,
+                "total_iterations": train_cfg.num_iterations,
+            }, f, indent=2)
+        print(f"\nTRAINING FAILED: {e}")
+        traceback.print_exc()
+        sys.exit(1)
 
 
 if __name__ == "__main__":

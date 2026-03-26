@@ -5,6 +5,7 @@ Trains on self-play data from the replay buffer.
 Loss = policy_loss (cross-entropy with MCTS targets) + value_loss (MSE).
 """
 
+import json
 import os
 import sys
 import time
@@ -108,17 +109,84 @@ class Trainer:
         self.train_history = []
         self.iteration = 0
 
+        # JSON logging directory
+        self.log_dir = os.path.join("logs", self.config.run_name)
+        os.makedirs(self.log_dir, exist_ok=True)
+
+        # Status file path (project root)
+        self.status_file = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)), "training_status.json"
+        )
+
+        # Phase tracking (set externally via train.py)
+        self.phase = "unknown"
+        self.config_file = ""
+
+    def _write_status(self, **overrides):
+        """Write/update training_status.json."""
+        status = {
+            "status": "running",
+            "phase": self.phase,
+            "run_name": self.config.run_name,
+            "config_file": self.config_file,
+            "started_at": self._started_at,
+            "finished_at": None,
+            "pid": os.getpid(),
+            "current_iteration": self.iteration,
+            "total_iterations": self.config.num_iterations,
+            "latest_metrics": None,
+            "latest_eval": None,
+        }
+        status.update(overrides)
+        with open(self.status_file, "w") as f:
+            json.dump(status, f, indent=2)
+
+    def _log_metrics(self, iteration, metrics, sp_time, train_time, lr, new_exp):
+        """Append one line to metrics.jsonl."""
+        entry = {
+            "iteration": iteration,
+            "timestamp": datetime.now().isoformat(),
+            "buffer_size": len(self.buffer),
+            "sp_time": round(sp_time, 2),
+            "train_time": round(train_time, 2),
+            "policy_loss": round(metrics["policy_loss"], 6),
+            "value_loss": round(metrics["value_loss"], 6),
+            "total_loss": round(metrics["total_loss"], 6),
+            "lr": lr,
+            "new_experiences": new_exp,
+        }
+        with open(os.path.join(self.log_dir, "metrics.jsonl"), "a") as f:
+            f.write(json.dumps(entry) + "\n")
+        return entry
+
+    def _log_eval(self, iteration, eval_results):
+        """Append one line to eval.jsonl."""
+        entry = {
+            "iteration": iteration,
+            "timestamp": datetime.now().isoformat(),
+            "results": eval_results,
+        }
+        with open(os.path.join(self.log_dir, "eval.jsonl"), "a") as f:
+            f.write(json.dumps(entry) + "\n")
+        return entry
+
     def train(self, evaluator=None):
         """Run the full training loop."""
         cfg = self.config
         os.makedirs(self.run_dir, exist_ok=True)
+        self._started_at = datetime.now().isoformat()
 
         print(f"Starting training: {cfg.num_iterations} iterations")
         print(f"  Run: {cfg.run_name} -> {self.run_dir}")
         print(f"  Self-play: {cfg.num_games_per_iteration} games/iter, {cfg.num_players} players")
         print(f"  Training: batch={cfg.batch_size}, epochs={cfg.epochs_per_iteration}")
         print(f"  MCTS: {'enabled' if self.mcts else 'disabled'} ({cfg.mcts_simulations} sims)")
+        print(f"  Logs: {self.log_dir}")
         print()
+
+        self._write_status()
+
+        latest_eval = None
 
         for iteration in range(1, cfg.num_iterations + 1):
             self.iteration = iteration
@@ -165,10 +233,17 @@ class Trainer:
             )
             self.train_history.append(metrics)
 
+            # JSON logging
+            metrics_entry = self._log_metrics(
+                iteration, metrics, sp_time, train_time, lr, len(experiences)
+            )
+
             # 3. Evaluate
             if evaluator and iteration % cfg.eval_every == 0:
                 eval_results = evaluator(self.model)
                 print(f"  EVAL: {eval_results}")
+                self._log_eval(iteration, eval_results)
+                latest_eval = eval_results
 
                 # Track best model by eval score
                 eval_score = None
@@ -179,12 +254,34 @@ class Trainer:
                     self._save_checkpoint(iteration, tag="best")
                     print(f"  NEW BEST model (score={eval_score:.1f})")
 
+            # Update status file
+            self._write_status(
+                current_iteration=iteration,
+                latest_metrics={
+                    "policy_loss": metrics_entry["policy_loss"],
+                    "value_loss": metrics_entry["value_loss"],
+                },
+                latest_eval=latest_eval,
+            )
+
             # 4. Checkpoint
             if iteration % cfg.checkpoint_every == 0:
                 self._save_checkpoint(iteration)
 
         # Final checkpoint
         self._save_checkpoint(self.iteration, final=True)
+
+        # Mark finished
+        self._write_status(
+            status="finished",
+            current_iteration=self.iteration,
+            finished_at=datetime.now().isoformat(),
+            latest_metrics={
+                "policy_loss": self.train_history[-1]["policy_loss"],
+                "value_loss": self.train_history[-1]["value_loss"],
+            },
+            latest_eval=latest_eval,
+        )
 
     def _train_epoch(self) -> Dict[str, float]:
         """Train for one epoch on replay buffer data."""
