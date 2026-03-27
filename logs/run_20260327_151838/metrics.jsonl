@@ -1,0 +1,2 @@
+{"iteration": 1, "timestamp": "2026-03-27T15:18:40.893988", "buffer_size": 600, "sp_time": 2.32, "train_time": 0.33, "policy_loss": 4.060391, "value_loss": 0.260734, "total_loss": 4.321124, "lr": 0.000505, "new_experiences": 600, "avg_game_length": 300.0, "max_moves_pct": 1.0}
+{"iteration": 2, "timestamp": "2026-03-27T15:18:43.241943", "buffer_size": 1200, "sp_time": 2.18, "train_time": 0.17, "policy_loss": 3.901598, "value_loss": 0.076028, "total_loss": 3.977626, "lr": 1e-05, "new_experiences": 600, "avg_game_length": 300.0, "max_moves_pct": 1.0}

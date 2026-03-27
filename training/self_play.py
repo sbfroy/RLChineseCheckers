@@ -54,6 +54,8 @@ class SelfPlayWorker:
         self.mcts = mcts
         self.mcts_simulations = mcts_simulations
         self.device = device
+        self._last_game_length = None
+        self._last_game_hit_max = False
 
     def play_game(self) -> List[Experience]:
         """
@@ -118,6 +120,10 @@ class SelfPlayWorker:
             step_rewards[colour].append(reward)
 
             move_num += 1
+
+        # Track game stats
+        self._last_game_length = move_num
+        self._last_game_hit_max = (game.move_count >= game.max_moves)
 
         # Compute value targets: discounted sum of future rewards per player
         experiences = []
@@ -205,11 +211,12 @@ def generate_self_play_data(
     mcts_simulations: int = 50,
     reward_config: Optional[RewardConfig] = None,
     device: str = "cpu",
-) -> List[Experience]:
+) -> Tuple[List[Experience], Dict]:
     """
     Generate training data from multiple self-play games.
 
-    Returns all experiences from all games combined.
+    Returns (experiences, game_stats) where game_stats contains
+    aggregate info about the games played.
     """
     worker = SelfPlayWorker(
         model=model,
@@ -223,8 +230,20 @@ def generate_self_play_data(
     )
 
     all_experiences = []
+    game_lengths = []
+    max_moves_games = 0
     for i in range(num_games):
         exps = worker.play_game()
         all_experiences.extend(exps)
+        if worker._last_game_length is not None:
+            game_lengths.append(worker._last_game_length)
+            if worker._last_game_hit_max:
+                max_moves_games += 1
 
-    return all_experiences
+    game_stats = {
+        "avg_game_length": round(sum(game_lengths) / max(len(game_lengths), 1), 1),
+        "max_moves_pct": round(max_moves_games / max(num_games, 1), 3),
+        "total_experiences": len(all_experiences),
+    }
+
+    return all_experiences, game_stats

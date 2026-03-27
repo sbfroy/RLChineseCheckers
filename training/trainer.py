@@ -122,6 +122,26 @@ class Trainer:
         self.phase = "unknown"
         self.config_file = ""
 
+    def save_run_metadata(self):
+        """Save full config and model info as run_metadata.json in the log dir.
+        Call this after setting phase and config_file."""
+        from dataclasses import asdict
+        metadata = {
+            "run_name": self.config.run_name,
+            "started_at": datetime.now().isoformat(),
+            "phase": self.phase,
+            "config_file": self.config_file,
+            "device": self.config.device,
+            "training_config": asdict(self.config),
+            "reward_config": asdict(self.reward_config),
+            "model_params": sum(p.numel() for p in self.model.parameters()),
+            "mcts_enabled": self.mcts is not None,
+            "mcts_simulations": self.config.mcts_simulations,
+        }
+        path = os.path.join(self.log_dir, "run_metadata.json")
+        with open(path, "w") as f:
+            json.dump(metadata, f, indent=2)
+
     def _write_status(self, **overrides):
         """Write/update training_status.json."""
         status = {
@@ -141,7 +161,8 @@ class Trainer:
         with open(self.status_file, "w") as f:
             json.dump(status, f, indent=2)
 
-    def _log_metrics(self, iteration, metrics, sp_time, train_time, lr, new_exp):
+    def _log_metrics(self, iteration, metrics, sp_time, train_time, lr, new_exp,
+                     game_stats=None):
         """Append one line to metrics.jsonl."""
         entry = {
             "iteration": iteration,
@@ -155,6 +176,9 @@ class Trainer:
             "lr": lr,
             "new_experiences": new_exp,
         }
+        if game_stats:
+            entry["avg_game_length"] = game_stats["avg_game_length"]
+            entry["max_moves_pct"] = game_stats["max_moves_pct"]
         with open(os.path.join(self.log_dir, "metrics.jsonl"), "a") as f:
             f.write(json.dumps(entry) + "\n")
         return entry
@@ -194,7 +218,7 @@ class Trainer:
 
             # 1. Self-play
             self.model.eval()
-            experiences = generate_self_play_data(
+            experiences, game_stats = generate_self_play_data(
                 model=self.model,
                 encoder=self.encoder,
                 num_games=cfg.num_games_per_iteration,
@@ -235,7 +259,8 @@ class Trainer:
 
             # JSON logging
             metrics_entry = self._log_metrics(
-                iteration, metrics, sp_time, train_time, lr, len(experiences)
+                iteration, metrics, sp_time, train_time, lr, len(experiences),
+                game_stats=game_stats,
             )
 
             # 3. Evaluate

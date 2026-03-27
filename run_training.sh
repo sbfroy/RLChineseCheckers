@@ -27,13 +27,18 @@ shift
 # Create logs directory
 mkdir -p logs
 
-# Generate log filename from timestamp
+# Generate run name from timestamp (matches trainer's auto-naming)
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-LOGFILE="logs/train_${TIMESTAMP}.log"
+RUN_NAME="run_${TIMESTAMP}"
+
+# Console log goes alongside the run's JSON logs in logs/<run_name>/
+mkdir -p "logs/${RUN_NAME}"
+LOGFILE="logs/${RUN_NAME}/console.log"
 
 echo "============================================="
 echo "  Chinese Checkers RL Training"
 echo "  Config: ${CONFIG}"
+echo "  Run:    ${RUN_NAME}"
 echo "  Log:    ${LOGFILE}"
 echo "  Args:   $@"
 echo "  Time:   $(date)"
@@ -41,7 +46,8 @@ echo "============================================="
 echo ""
 
 # Run training, pipe to both terminal and log file
-python3.10 train.py --config "${CONFIG}" "$@" 2>&1 | tee "${LOGFILE}"
+# Pass --run-name so trainer uses the same directory
+python3.10 train.py --config "${CONFIG}" --run-name "${RUN_NAME}" "$@" 2>&1 | tee "${LOGFILE}"
 
 EXIT_CODE=${PIPESTATUS[0]}
 

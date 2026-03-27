@@ -70,19 +70,30 @@ When changing a config:
 ```
 ## [YYYY-MM-DD HH:MM] Run Analysis
 
-**Phase:** bootstrap / mcts_light / mcts_full
+**Phase:** bootstrap / mcts_light / mcts_full / multi_player
 **Run:** <run_name>
 **Config:** <config file used>
+**Device:** cpu / cuda
+**Wall clock time:** <total training duration>
 
 **Results:**
 - Iterations completed: X / Y
-- Final policy loss: X.XXXX (trend: decreasing/stable/increasing)
-- Final value loss: X.XXXX
-- Win rates: vs random X%, vs greedy X% (if available)
-- Best checkpoint: <path>
+- Final policy loss: X.XXXX (trend: decreasing/plateau/increasing)
+- Final value loss: X.XXXX (trend: decreasing/plateau/increasing)
+- Avg game length: X moves (X% hit 300-move max)
+- Win rates: vs random X%, vs greedy X%, vs heuristic X%
+- Avg scores: vs random X, vs greedy X, vs heuristic X
+- Best checkpoint: <path> (score: X)
 
-**Analysis:** <what went well, what didn't, key observations>
+**Reward config used:**
+- pin_goal_weight: X, distance_weight: X, lagging_weight: X, home_exit_weight: X
 
+**Strengths observed:** <what the agent does well>
+**Weaknesses observed:** <what the agent does poorly>
+
+**Analysis:** <what went well, what didn't, key observations, comparison to previous runs>
+
+**Decision:** <continue / advance phase / tune rewards / competition prep>
 **Recommendation for next run:** <what to change and why>
 
 **Command:** <exact command to start next run>

@@ -19,16 +19,18 @@ class TestSelfPlay:
     def test_generates_experiences(self):
         model = PolicyValueNet(num_res_blocks=1, trunk_channels=16)
         encoder = BoardEncoder()
-        experiences = generate_self_play_data(
+        experiences, game_stats = generate_self_play_data(
             model=model, encoder=encoder,
             num_games=1, num_players=2,
         )
         assert len(experiences) > 0
+        assert "avg_game_length" in game_stats
+        assert "max_moves_pct" in game_stats
 
     def test_experience_shapes(self):
         model = PolicyValueNet(num_res_blocks=1, trunk_channels=16)
         encoder = BoardEncoder()
-        experiences = generate_self_play_data(
+        experiences, _ = generate_self_play_data(
             model=model, encoder=encoder,
             num_games=1, num_players=2,
         )
@@ -42,7 +44,7 @@ class TestSelfPlay:
     def test_policy_targets_sum_to_one(self):
         model = PolicyValueNet(num_res_blocks=1, trunk_channels=16)
         encoder = BoardEncoder()
-        experiences = generate_self_play_data(
+        experiences, _ = generate_self_play_data(
             model=model, encoder=encoder,
             num_games=1, num_players=2,
         )
@@ -52,7 +54,7 @@ class TestSelfPlay:
     def test_value_targets_in_range(self):
         model = PolicyValueNet(num_res_blocks=1, trunk_channels=16)
         encoder = BoardEncoder()
-        experiences = generate_self_play_data(
+        experiences, _ = generate_self_play_data(
             model=model, encoder=encoder,
             num_games=1, num_players=2,
         )

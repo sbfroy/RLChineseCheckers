@@ -94,12 +94,23 @@ def make_evaluator(model_factory_args, eval_cfg, device="cpu"):
         results = {}
         total_score = 0
         num_baselines = 0
-        for name, baseline in [("random", RandomAgent()), ("greedy", GreedyProgressAgent())]:
-            r = play_match(agent, baseline, num_games=eval_cfg.get("num_games", 5))
-            results[name] = f"{r['a_win_rate']:.0%}W, score={r['avg_a_score']:.0f}"
+        for name, baseline in [("random", RandomAgent()), ("greedy", GreedyProgressAgent()),
+                                ("heuristic", HeuristicAgent())]:
+            num_games = eval_cfg.get("num_games", 10)
+            r = play_match(agent, baseline, num_games=num_games)
+            results[name] = {
+                "win_rate": round(r["a_win_rate"], 3),
+                "avg_score": round(r["avg_a_score"], 1),
+                "avg_game_length": round(r["avg_game_length"], 1),
+                "avg_game_time": round(r["avg_game_time"], 2),
+                "wins": r["a_wins"],
+                "losses": r["b_wins"],
+                "draws": r["draws"],
+                "num_games": num_games,
+            }
             total_score += r["avg_a_score"]
             num_baselines += 1
-        results["avg_score"] = total_score / max(num_baselines, 1)
+        results["avg_score"] = round(total_score / max(num_baselines, 1), 1)
         return results
     return evaluator
 
@@ -169,6 +180,7 @@ def main():
     # Set phase and config info for status tracking
     trainer.phase = args.phase
     trainer.config_file = args.config
+    trainer.save_run_metadata()
 
     # Build evaluator
     evaluator = None
