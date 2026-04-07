@@ -24,7 +24,7 @@ training:
   checkpoint_dir: checkpoints
   checkpoint_every: 10
   eval_every: 20
-  device: cuda
+  device: cpu
 
 mcts:
   num_simulations: 50
@@ -36,8 +36,8 @@ rewards:
   loss_reward: -1.0
   draw_reward: -0.5
   max_moves_reward: -0.3
-  pin_goal_weight: 0.5
-  distance_weight: 0.05
+  pin_goal_weight: 0.3
+  distance_weight: 0.01
   lagging_weight: -0.005
   home_exit_weight: 0.05
   mobility_weight: 0.001
