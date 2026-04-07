@@ -47,7 +47,7 @@ echo ""
 
 # Run training, pipe to both terminal and log file
 # Pass --run-name so trainer uses the same directory
-python3.10 train.py --config "${CONFIG}" --run-name "${RUN_NAME}" "$@" 2>&1 | tee "${LOGFILE}"
+python train.py --config "${CONFIG}" --run-name "${RUN_NAME}" "$@" 2>&1 | tee "${LOGFILE}"
 
 EXIT_CODE=${PIPESTATUS[0]}
 
