@@ -129,6 +129,12 @@ class SelfPlayWorker:
         experiences = []
         gamma = 0.99
 
+        # Score-margin terminal value: dense, always-meaningful signal aligned
+        # with the competition scoring formula. Avoids relying on rare WIN
+        # events (under the 300-move cap, even strong rule-based agents
+        # essentially never satisfy "all pins in opposite zone").
+        final_scores = game.compute_scores() if game.status == "FINISHED" else None
+
         for colour in game.colours:
             data = game_data[colour]
             rewards = step_rewards[colour]
@@ -140,8 +146,20 @@ class SelfPlayWorker:
             returns = []
             G = 0.0
 
-            # Terminal bonus based on game outcome
-            if game.winner == colour:
+            # Terminal value: prefer score-margin when scores are available
+            if final_scores and colour in final_scores:
+                my_score = final_scores[colour]["final_score"]
+                opp_scores = [
+                    final_scores[c]["final_score"]
+                    for c in game.colours if c != colour and c in final_scores
+                ]
+                if opp_scores:
+                    avg_opp = sum(opp_scores) / len(opp_scores)
+                    G = (my_score - avg_opp) / 1300.0
+                else:
+                    G = my_score / 1300.0
+                G = max(-1.0, min(1.0, G))
+            elif game.winner == colour:
                 G = self.reward_shaper.config.win_reward
             elif game.winner is not None:
                 G = self.reward_shaper.config.loss_reward

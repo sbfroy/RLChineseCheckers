@@ -49,3 +49,60 @@ Previous runs (March 27) appear to have had similar issues — old checkpoints a
 
 ---
 
+## [2026-04-13 13:00] Run Analysis
+
+**Phase:** mcts_light
+**Run:** run_20260408_113340
+**Config:** configs/mcts_light.yaml
+**Device:** cuda
+**Wall clock time:** ~48 hours (2026-04-08 11:33 → 2026-04-10 11:21)
+
+**Results:**
+- Iterations completed: 150 / 150
+- Final policy loss: 3.6229 (trend: very slowly decreasing — 3.996 → 3.623 over 150 iters, ~0.37 total)
+- Final value loss: 0.0036 (trend: collapsed to ~0 — predicting 0 for all positions)
+- Avg game length: 300.0 moves (100% hit 300-move max across ALL 150 iterations — identical to bootstrap failure)
+- Win rates: vs random 0%, vs greedy 0%, vs heuristic 0% (all 20/20 draws every eval)
+- Avg scores: vs random 220.4, vs greedy 305.0, vs heuristic 197.0 (flat across all 7 evals — no improvement)
+- Best checkpoint: model_best.pt at iter 20 (score 242.2 — first eval, never beaten)
+
+**Reward config used:**
+- pin_goal_weight: 0.5, distance_weight: 0.05, lagging_weight: -0.005, home_exit_weight: 0.05
+
+**Strengths observed:** None — agent has not learned beyond random play.
+
+**Weaknesses observed:** Identical pathology to bootstrap run. 100% max-moves, value head outputs ~0 everywhere, scores flat, no win/loss signal at all.
+
+**Analysis:** Spent 48 GPU hours producing essentially zero learning. Hypothesis from previous journal entry (that MCTS would break the circular fixed-point) was wrong. The actual root cause is much deeper.
+
+**ROOT CAUSE FOUND (diagnostic test):**
+Ran `GreedyProgressAgent vs GreedyProgressAgent` and `HeuristicAgent vs HeuristicAgent` for 5 games each at `max_moves=300`:
+- Greedy vs greedy: 0/5 wins, all hit max_moves, deterministic final scores 994 / 1097
+- Heuristic vs heuristic: 0/5 wins, all hit max_moves, deterministic 1199 / 1097
+
+Even strong rule-based agents **cannot win a single game** under the 300-move cap. Both get most pins to the goal (≈8-11 of ~10 pins) but strand 1-2 lagging pieces forever because no opponent can complete `_check_status` ("all pins in opposite zone"). Consequently:
+
+1. **Self-play has produced ZERO terminal WIN signal across 50+ hours of training.** Every game ends in MAX_MOVES.
+2. The terminal value reward path is `max_moves_reward (-0.3) + score_normalized*0.5` — for a typical 800/1300 score that's only ~0.0075. After per-step rewards and `max_abs` normalization in `self_play.py:155-159`, the terminal contribution becomes noise.
+3. The value head correctly learned "all positions yield ~0" → value loss collapsed to 0.003.
+4. The policy head trains on MCTS visit counts, but with 50 sims and ~50 legal moves per state, visit distributions are nearly uniform → near-zero gradient signal.
+5. No bug in `_check_status`, `compute_scores`, or MCTS — the failure is **architectural**: the training loop assumes WIN events that never occur in this game/agent population.
+
+**Comparison to previous run:** Same disease (100% max moves, flat scores, value head collapse). The bootstrap → MCTS-light transition did not help because both runs are starved of the same signal. The 5x distance_weight and pin_goal_weight bump from the previous journal entry was a band-aid that didn't address the missing terminal signal.
+
+**Decision:** Halt long training runs. Fix the value-target signal before launching anything else. Specifically, the training loop in `training/self_play.py:144-159` must stop relying on `game.winner`/draw and instead use **score margin** as the terminal value target (`(my_score - avg_opp_score) / 1300`). This converts an unreachable binary outcome into a dense, gradient-rich, competition-aligned target that aligns directly with the scoring formula. Optionally, also bias self-play opponent slot toward a strong heuristic so the network gets contrasting signal.
+
+**Recommendation for next run:**
+Before any new training:
+1. Patch `training/self_play.py` to compute value targets from score margin, not WIN/DRAW. Approx: `G = (scores[colour]["final_score"] - mean(opp scores)) / 1300.0` clamped to [-1, 1].
+2. Optionally: in `evaluate.py`, the eval should still report wins/scores but recognize that "0% win rate" is meaningless under current game length cap — track score margin instead as the headline metric.
+3. Diagnostic 10-iteration run with the patch to confirm value loss now grows (>0.05) and avg score against greedy improves above 305 within 10 iters.
+4. Only after the diagnostic shows learning, launch a 100-iter MCTS-light training run.
+
+**Command:** *No training command yet — awaiting user approval to patch `self_play.py`. After patching, the diagnostic command will be:*
+```bash
+./run_training.sh configs/mcts_light.yaml --phase mcts_light  # with num_iterations temporarily set to 10
+```
+
+---
+
