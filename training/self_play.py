@@ -27,9 +27,10 @@ from training.replay_buffer import Experience, ReplayBuffer
 
 class SelfPlayWorker:
     """
-    Generates training data through self-play.
+    Generates training data through self-play or vs external opponent.
 
-    Each game produces experiences for all players involved.
+    Each game produces experiences for the RL agent (all players in
+    self-play mode, or only the RL agent when an opponent is set).
     Supports both pure-network play and MCTS-enhanced play.
     """
 
@@ -44,6 +45,7 @@ class SelfPlayWorker:
         mcts=None,
         mcts_simulations: int = 50,
         device: str = "cpu",
+        opponent=None,
     ):
         self.model = model
         self.encoder = encoder
@@ -54,17 +56,24 @@ class SelfPlayWorker:
         self.mcts = mcts
         self.mcts_simulations = mcts_simulations
         self.device = device
+        self.opponent = opponent
         self._last_game_length = None
         self._last_game_hit_max = False
 
     def play_game(self) -> List[Experience]:
         """
-        Play one complete self-play game and return experiences.
+        Play one complete game and return experiences.
 
-        Returns list of Experience objects (one per move, per player).
+        In self-play mode (no opponent), collects data for all players.
+        With an opponent, collects data only for the RL agent.
+
+        Returns list of Experience objects.
         """
         game = LocalGame(num_players=self.num_players)
         game.reset()
+
+        # Determine which colour(s) the RL agent plays
+        rl_colour = game.turn_order[0] if self.opponent is not None else None
 
         # Collect data per colour: list of (spatial, scalars, mask, policy, reward_so_far)
         game_data: Dict[str, List] = {c: [] for c in game.colours}
@@ -74,6 +83,17 @@ class SelfPlayWorker:
         while not game.done:
             colour = game.current_colour()
 
+            # Opponent's turn — use external agent, no data collection
+            if self.opponent is not None and colour != rl_colour:
+                try:
+                    pin_id, to_index = self.opponent.select_action(game, colour)
+                    state, done, info = game.step(pin_id, to_index)
+                except Exception:
+                    break
+                move_num += 1
+                continue
+
+            # RL agent's turn — full pipeline
             # Encode state
             spatial, scalars = self.encoder.encode_from_game(game, colour)
             legal = game.get_legal_moves(colour)
@@ -129,13 +149,17 @@ class SelfPlayWorker:
         experiences = []
         gamma = 0.99
 
-        # Score-margin terminal value: dense, always-meaningful signal aligned
-        # with the competition scoring formula. Avoids relying on rare WIN
-        # events (under the 300-move cap, even strong rule-based agents
-        # essentially never satisfy "all pins in opposite zone").
+        # Absolute-score terminal value: uses the agent's own competition
+        # score normalized by max possible score. Unlike score margin,
+        # this always provides meaningful signal even in self-play, and
+        # creates cross-game variance when playing against diverse opponents.
         final_scores = game.compute_scores() if game.status == "FINISHED" else None
 
         for colour in game.colours:
+            # Skip opponent's data when using external opponent
+            if self.opponent is not None and colour != rl_colour:
+                continue
+
             data = game_data[colour]
             rewards = step_rewards[colour]
 
@@ -146,18 +170,13 @@ class SelfPlayWorker:
             returns = []
             G = 0.0
 
-            # Terminal value: prefer score-margin when scores are available
+            # Terminal value: absolute score (not margin) for consistent
+            # cross-game targets. The value head learns "how good is this
+            # position for scoring points" — independent of opponent.
             if final_scores and colour in final_scores:
                 my_score = final_scores[colour]["final_score"]
-                opp_scores = [
-                    final_scores[c]["final_score"]
-                    for c in game.colours if c != colour and c in final_scores
-                ]
-                if opp_scores:
-                    avg_opp = sum(opp_scores) / len(opp_scores)
-                    G = (my_score - avg_opp) / 1300.0
-                else:
-                    G = my_score / 1300.0
+                norm = self.reward_shaper.config.score_normalization
+                G = my_score / norm
                 G = max(-1.0, min(1.0, G))
             elif game.winner == colour:
                 G = self.reward_shaper.config.win_reward
@@ -170,11 +189,10 @@ class SelfPlayWorker:
                 G = r + gamma * G
                 returns.insert(0, G)
 
-            # Normalize returns to [-1, 1] range for value target
-            if returns:
-                max_abs = max(abs(v) for v in returns) if returns else 1.0
-                if max_abs > 1.0:
-                    returns = [v / max_abs for v in returns]
+            # No per-game normalization — we want cross-game variance
+            # preserved so the value head learns consistent position
+            # evaluations. Reward weights are sized so returns naturally
+            # fall near [-1, 1]; clip catches outliers.
 
             for i, d in enumerate(data):
                 experiences.append(Experience(
@@ -229,9 +247,13 @@ def generate_self_play_data(
     mcts_simulations: int = 50,
     reward_config: Optional[RewardConfig] = None,
     device: str = "cpu",
+    opponent=None,
 ) -> Tuple[List[Experience], Dict]:
     """
-    Generate training data from multiple self-play games.
+    Generate training data from self-play or vs-opponent games.
+
+    When opponent is set, the RL agent plays one colour and the opponent
+    plays the other. Only the RL agent's experiences are collected.
 
     Returns (experiences, game_stats) where game_stats contains
     aggregate info about the games played.
@@ -245,6 +267,7 @@ def generate_self_play_data(
         mcts=mcts,
         mcts_simulations=mcts_simulations,
         device=device,
+        opponent=opponent,
     )
 
     all_experiences = []

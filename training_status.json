@@ -1,48 +1,16 @@
 {
   "status": "finished",
-  "phase": "mcts_light",
-  "run_name": "run_20260413_184930",
-  "config_file": "configs/mcts_light.yaml",
-  "started_at": "2026-04-13T18:49:33.380237",
-  "finished_at": "2026-04-15T18:40:23.250472",
-  "pid": 1551622,
-  "current_iteration": 150,
-  "total_iterations": 150,
+  "phase": "unknown",
+  "run_name": "test_run",
+  "config_file": "",
+  "started_at": "2026-04-17T11:10:04.387023",
+  "finished_at": "2026-04-17T11:10:05.269093",
+  "pid": 17545,
+  "current_iteration": 1,
+  "total_iterations": 1,
   "latest_metrics": {
-    "policy_loss": 3.6015161514282226,
-    "value_loss": 0.0037988081574440004
+    "policy_loss": 3.9640727043151855,
+    "value_loss": 0.7190996408462524
   },
-  "latest_eval": {
-    "random": {
-      "win_rate": 0.0,
-      "avg_score": 209.2,
-      "avg_game_length": 300.0,
-      "avg_game_time": 9.31,
-      "wins": 0,
-      "losses": 0,
-      "draws": 20,
-      "num_games": 20
-    },
-    "greedy": {
-      "win_rate": 0.0,
-      "avg_score": 197.0,
-      "avg_game_length": 300.0,
-      "avg_game_time": 9.17,
-      "wins": 0,
-      "losses": 0,
-      "draws": 20,
-      "num_games": 20
-    },
-    "heuristic": {
-      "win_rate": 0.0,
-      "avg_score": 196.0,
-      "avg_game_length": 300.0,
-      "avg_game_time": 9.26,
-      "wins": 0,
-      "losses": 0,
-      "draws": 20,
-      "num_games": 20
-    },
-    "avg_score": 200.7
-  }
+  "latest_eval": null
 }

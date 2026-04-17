@@ -169,12 +169,29 @@ def main():
         checkpoint = Trainer.load_checkpoint(args.resume, model)
         print(f"Resumed from iteration {checkpoint['iteration']}")
 
+    # Build opponent if configured
+    opponent = None
+    opp_name = cfg.get("training", {}).get("opponent")
+    if opp_name:
+        opp_map = {
+            "heuristic": HeuristicAgent,
+            "greedy": GreedyProgressAgent,
+            "random": RandomAgent,
+        }
+        opp_cls = opp_map.get(opp_name)
+        if opp_cls:
+            opponent = opp_cls()
+            print(f"  Opponent: {opp_name} ({opp_cls.__name__})")
+        else:
+            print(f"  WARNING: Unknown opponent '{opp_name}', using self-play")
+
     # Build trainer
     trainer = Trainer(
         model=model,
         config=train_cfg,
         reward_config=reward_cfg,
         mcts=mcts,
+        opponent=opponent,
     )
 
     # Set phase and config info for status tracking

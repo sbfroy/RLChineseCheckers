@@ -1,6 +1,6 @@
-# MCTS Light training config (Phase 2) — vs heuristic opponent
+# MCTS Light training config (Phase 2)
 # 50 MCTS simulations during self-play
-# Trains against HeuristicAgent to break self-play symmetry
+# Resume from best bootstrap checkpoint
 
 model:
   num_res_blocks: 6
@@ -9,8 +9,8 @@ model:
   value_hidden: 128
 
 training:
-  num_iterations: 50
-  num_games_per_iteration: 40
+  num_iterations: 150
+  num_games_per_iteration: 25
   num_players: 2
   batch_size: 128
   epochs_per_iteration: 5
@@ -23,9 +23,8 @@ training:
   temperature: 1.0
   checkpoint_dir: checkpoints
   checkpoint_every: 10
-  eval_every: 10
+  eval_every: 20
   device: cuda
-  opponent: heuristic
 
 mcts:
   num_simulations: 50
@@ -37,11 +36,11 @@ rewards:
   loss_reward: -1.0
   draw_reward: -0.5
   max_moves_reward: -0.3
-  pin_goal_weight: 0.1
-  distance_weight: 0.01
-  lagging_weight: -0.001
-  home_exit_weight: 0.02
-  mobility_weight: 0.0
+  pin_goal_weight: 0.5
+  distance_weight: 0.05
+  lagging_weight: -0.005
+  home_exit_weight: 0.05
+  mobility_weight: 0.001
   use_score_terminal: true
   score_normalization: 1300.0
 

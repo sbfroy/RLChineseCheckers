@@ -75,11 +75,13 @@ class Trainer:
         config: Optional[TrainingConfig] = None,
         reward_config: Optional[RewardConfig] = None,
         mcts=None,
+        opponent=None,
     ):
         self.model = model
         self.config = config or TrainingConfig()
         self.reward_config = reward_config or RewardConfig()
         self.mcts = mcts
+        self.opponent = opponent
         self.encoder = BoardEncoder()
         self.buffer = ReplayBuffer(capacity=self.config.buffer_capacity)
 
@@ -137,6 +139,7 @@ class Trainer:
             "model_params": sum(p.numel() for p in self.model.parameters()),
             "mcts_enabled": self.mcts is not None,
             "mcts_simulations": self.config.mcts_simulations,
+            "opponent": type(self.opponent).__name__ if self.opponent else None,
         }
         path = os.path.join(self.log_dir, "run_metadata.json")
         with open(path, "w") as f:
@@ -216,7 +219,7 @@ class Trainer:
             self.iteration = iteration
             iter_start = time.time()
 
-            # 1. Self-play
+            # 1. Self-play (or vs opponent)
             self.model.eval()
             experiences, game_stats = generate_self_play_data(
                 model=self.model,
@@ -228,6 +231,7 @@ class Trainer:
                 mcts_simulations=cfg.mcts_simulations,
                 reward_config=self.reward_config,
                 device=cfg.device,
+                opponent=self.opponent,
             )
             self.buffer.push_batch(experiences)
             sp_time = time.time() - iter_start

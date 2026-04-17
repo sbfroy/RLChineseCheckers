@@ -106,3 +106,66 @@ Before any new training:
 
 ---
 
+## [2026-04-17 13:00] Run Analysis
+
+**Phase:** mcts_light
+**Run:** run_20260413_184930
+**Config:** configs/mcts_light.yaml
+**Device:** cuda
+**Wall clock time:** ~48 hours (2026-04-13 18:49 → 2026-04-15 18:40)
+
+**Results:**
+- Iterations completed: 150 / 150
+- Final policy loss: 3.6015 (trend: slowly decreasing — 3.977 → 3.602, total -0.375)
+- Final value loss: 0.0038 (trend: collapsed from 0.133 to ~0.004 — same pathology as all previous runs)
+- Avg game length: 300.0 moves (100% hit 300-move max across ALL 150 iterations)
+- Win rates: vs random 0%, vs greedy 0%, vs heuristic 0% (all draws, every eval)
+- Avg scores: vs random 201-223, vs greedy 196-205, vs heuristic 196-202 (flat, no improvement)
+- Best checkpoint: model_best.pt at iter 20 (score 206.6 — first eval, never beaten)
+
+**Reward config used:**
+- pin_goal_weight: 0.5, distance_weight: 0.05, lagging_weight: -0.005, home_exit_weight: 0.05
+
+**Strengths observed:** Policy loss decreased meaningfully (3.98 → 3.60), indicating MCTS does provide some signal. Run completed without crashes.
+
+**Weaknesses observed:** Identical failure pattern to all previous runs: 100% max-moves games, value loss collapsed to ~0, eval scores flat at ~200, 0% win rate against everything.
+
+**Analysis:**
+
+The `use_score_terminal: true` fix from the previous entry was correctly implemented in `self_play.py:150-161` (score-margin terminal value), but it did NOT fix the problem. Root cause diagnosis:
+
+1. **Self-play symmetry kills the signal.** Both players are the same model. Both score ~200. Score margin = (200-200)/1300 ≈ 0. Terminal value is still ~0, identical to before.
+2. **max_abs normalization destroys cross-game variance.** Lines 175-177 normalize each game's returns independently, so even if individual games produce slightly different values, the normalization makes them all look the same to the value head.
+3. **Vicious cycle confirmed:** Value head outputs ~0 everywhere → MCTS value estimates are useless → 50 sims over ~50 legal moves = ~1 visit per move → near-uniform visit distributions → weak policy targets → slow policy learning → still random play → value head stays useless.
+
+The score-margin fix addressed the right conceptual problem (don't rely on WIN events) but missed the structural one: when both players are identical, the margin is always zero. Previous run (run_20260408_113340) had the exact same issue for the same reason.
+
+**Three coordinated fixes applied:**
+
+1. **Train against HeuristicAgent opponent** — breaks self-play symmetry. Heuristic scores ~1000-1100, RL agent ~200 initially. Different scores → different terminal values → cross-game variance → value head has something to learn.
+2. **Absolute score terminal value** — `G = my_score / 1300` instead of `(my_score - opp) / 1300`. Always meaningful, independent of opponent.
+3. **Removed max_abs normalization** — preserves cross-game variance in value targets. Reward weights sized so returns naturally fall in [-1, 1] (verified: std=0.24 in smoke test vs near-zero before).
+
+Also reduced per-step reward weights to keep accumulated returns within [-1, 1] without normalization: distance_weight 0.01, pin_goal_weight 0.1, lagging_weight -0.001, home_exit_weight 0.02.
+
+**Smoke test results:**
+- VS opponent mode: 150 exp/game, value targets in [-0.72, 0.15], std=0.24
+- Self-play mode: still works (backward compatible)
+- All 49 existing tests pass
+
+**Decision:** Run 50-iteration diagnostic with the three fixes to validate value head learning.
+
+**Recommendation for next run:**
+- Config: `configs/mcts_light.yaml` (updated with opponent: heuristic, reduced rewards, 50 iters)
+- Fresh start (no resume — previous checkpoints learned nothing useful)
+- Monitor: value_loss should NOT collapse to 0. Expect >0.01 sustained. Avg score vs greedy should improve above 305 (previous best) within 20 iters.
+- If diagnostic succeeds: extend to 200 iterations with same config.
+- If value loss still collapses: the issue is in the encoder/model architecture, not the training signal.
+
+**Command:**
+```bash
+./run_training.sh configs/mcts_light.yaml --phase mcts_light
+```
+
+---
+
