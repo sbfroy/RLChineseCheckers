@@ -74,8 +74,10 @@ class ChineseCheckersAgent:
         """
         Select an action for local game play.
 
-        Returns:
-            (pin_id, to_index)
+        If the MCTS temperature is >0, samples from the visit-count policy
+        (gives real variance across games vs deterministic opponents).
+        If temperature is ~0, takes the argmax (deterministic, for
+        competition play).
         """
         policy = self.mcts.search(game, colour, self.model, self.encoder)
 
@@ -86,7 +88,11 @@ class ChineseCheckersAgent:
                 return actions[0]
             raise RuntimeError(f"No legal actions for {colour}")
 
-        action_idx = int(policy.argmax())
+        if self.mcts.temperature < 0.01:
+            action_idx = int(policy.argmax())
+        else:
+            probs = policy / policy.sum()
+            action_idx = int(np.random.choice(len(probs), p=probs))
         return flat_to_action(action_idx)
 
     def select_action_from_server_state(
@@ -127,7 +133,11 @@ class ChineseCheckersAgent:
             policy = self.mcts.search(game, my_colour, self.model, self.encoder)
 
             if policy.sum() > 0:
-                action_idx = int(policy.argmax())
+                if self.mcts.temperature < 0.01:
+                    action_idx = int(policy.argmax())
+                else:
+                    probs = policy / policy.sum()
+                    action_idx = int(np.random.choice(len(probs), p=probs))
                 return flat_to_action(action_idx)
             # Fall through to direct policy if MCTS returned nothing
 

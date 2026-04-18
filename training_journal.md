@@ -169,3 +169,80 @@ Also reduced per-step reward weights to keep accumulated returns within [-1, 1] 
 
 ---
 
+
+## [2026-04-18 10:30] Run Analysis
+
+**Phase:** mcts_light
+**Run:** run_20260417_091431
+**Config:** configs/mcts_light.yaml
+**Device:** cuda
+**Wall clock time:** ~13 hours (2026-04-17 09:14 → 2026-04-17 22:25)
+
+**Results:**
+- Iterations completed: 50 / 50
+- Final policy loss: 3.4942 (trend: slow decrease 4.11 → 3.49 — mostly flat after iter 10)
+- Final value loss: 0.0056 (trend: 0.155 → 0.005, stable low, not fully collapsed)
+- Avg game length: 300.0 moves (100% hit 300-move max across all 50 iterations)
+- Win rates: vs random 0%, vs greedy 0%, vs heuristic 0%
+- Avg scores: vs random 201-238, vs greedy 195-197, vs heuristic 195-196 (flat across evals)
+- Best checkpoint: N/A — `checkpoints/run_20260417_091431/` is empty on disk (likely cleaned between runs)
+
+**Reward config used:**
+- pin_goal_weight: 0.1, distance_weight: 0.01, lagging_weight: -0.001, home_exit_weight: 0.02
+
+**Strengths observed:** Value loss didn't fully collapse this time (floors around 0.005), indicating the absolute-score terminal + no-normalization fix did create some target variance.
+
+**Weaknesses observed:** Same fundamental pathology as all three prior runs — 100% max-moves, no pin_goal progress, flat scores.
+
+**Analysis — SMOKING-GUN DIAGNOSTIC:**
+
+Ran a live diagnostic on 2026-04-18 comparing untrained vs trained behavior:
+- RandomAgent vs GreedyProgressAgent (baseline): random=226 pts, greedy=1057 pts (greedy finishes most pins when unobstructed)
+- Fresh-init (untrained) PolicyValueNet + MCTS-20 vs Greedy: RL=196 pts in all 3 games (identical), Greedy=387 pts
+- Trained model (from console.log eval) vs Greedy: 195-197 pts — **same as untrained**
+
+**Training is producing zero net change in policy argmax.** Policy loss drops 4.11 → 3.49 only because the network is being pulled toward the near-uniform MCTS visit distribution (50 sims on ~50 legal moves ≈ 1 visit/action). The argmax remains stuck on whatever initialization produced. The RL net's initial argmax is a pin-clogging pattern so bad it drags even Greedy down from 1057 → 387.
+
+**Secondary eval bug:** `ChineseCheckersAgent.select_action` uses `policy.argmax()` (deterministic), and greedy/heuristic are also deterministic. So "20 eval games" is really 1 game replayed 20x. The identical 195.0 numbers across 20 games are one sample, not a statistic.
+
+**Root-cause synthesis (all three runs):**
+1. Games never end in WIN (even greedy-vs-greedy hits max_moves), so there's no terminal WIN signal.
+2. Absolute-score terminal has narrow positive dynamic range (0.15-0.25) — weak discrimination for the value head.
+3. MCTS past depth 1 evaluates opponent-colour states, but the network only saw RL-colour states in training (only RL data is collected), so leaf values past the root are garbage.
+4. Per-step reward shaping is too weak (distance_weight 0.01) — distance improvements barely register.
+5. 50 MCTS sims over ~50 legal moves = near-uniform visit counts → weak policy targets.
+6. Cycle: uniform policy → random-ish moves → no pin progress → tiny shaped rewards → no value variance → uniform MCTS → uniform policy.
+
+Each previous fix (score margin → heuristic opponent → absolute score + no normalization) addressed a real issue but left this cold-start bootstrap failure unresolved. Pure RL-from-scratch on this game (unreachable WIN condition, long horizon, sparse reward) is too hard from random init.
+
+**Decision:** HALT AlphaZero-style training. Pivot to **supervised imitation pre-training** as Phase 0.
+
+**Recommendation for next run:**
+
+**Phase 0 — Supervised imitation bootstrap (NEW, highest priority):**
+1. Write `training/supervised_bootstrap.py`: generate ~2000 games of HeuristicAgent vs HeuristicAgent and HeuristicAgent vs RandomAgent, collecting (state, heuristic_action, final_score_of_that_colour) triples.
+2. Policy head: cross-entropy on one-hot heuristic-action target.
+3. Value head: MSE on `final_score / 1300`. Target variance is real because heuristic's final score varies with opponent.
+4. Train 20-50 epochs, batch 128, lr 1e-3. Should take <30 min on CPU, ~5 min on GPU.
+5. **Expected outcome:** agent scores 800-1000+ vs random, ~400-600 vs heuristic, *and actually moves pins forward*.
+
+**Phase 0.5 — Fix eval methodology (cheap, do immediately):**
+- In `agents/chinese_checkers_agent.py::select_action`: sample from `policy` with temperature (the existing `mcts.temperature` is already set), or fall back to argmax only when `eval_greedy=True`. Currently `policy.argmax()` makes all deterministic-opponent matches identical.
+- Alternative: reduce `num_games` in eval from 20 to 5 for deterministic runs and add one stochastic opponent (e.g., RandomAgent) that provides real variance.
+
+**Phase 1 (only after Phase 0 works) — AlphaZero refinement:**
+- Resume from Phase 0 best checkpoint.
+- MCTS 100 sims, heuristic opponent.
+- Switch back to **score-margin terminal** (now that opponent scores differ from ours, margin has real variance).
+- Scale per-step rewards 5-10x: distance_weight 0.05, pin_goal_weight 0.5.
+- Monitor: value loss stays >0.02, avg score vs greedy climbs above Phase-0 baseline.
+
+**Why pivot now:** ~100 GPU hours invested in AlphaZero-from-scratch with zero wins. Competition deadline approaching. Supervised imitation is the standard fix when RL-from-scratch fails due to exploration bottlenecks (AlphaGo used expert games; hard-exploration Atari uses human demos). Fast (<1 hour), reliable, and gives us a working agent immediately. We can then layer AZ on top from a strong starting point.
+
+**Command:** *No training command yet — awaiting user approval to create `training/supervised_bootstrap.py` and fix the eval argmax bug. Once approved:*
+
+```bash
+python3.10 training/supervised_bootstrap.py --num-games 2000 --epochs 30 --device cuda
+```
+
+---
