@@ -3,14 +3,14 @@
   "phase": "unknown",
   "run_name": "test_run",
   "config_file": "",
-  "started_at": "2026-04-18T11:01:03.350103",
-  "finished_at": "2026-04-18T11:01:07.034072",
-  "pid": 20639,
+  "started_at": "2026-04-18T12:04:09.562296",
+  "finished_at": "2026-04-18T12:04:10.480674",
+  "pid": 47802,
   "current_iteration": 1,
   "total_iterations": 1,
   "latest_metrics": {
-    "policy_loss": 3.832827091217041,
-    "value_loss": 1.4858499765396118
+    "policy_loss": 3.9015824794769287,
+    "value_loss": 0.8838872909545898
   },
   "latest_eval": null
 }
