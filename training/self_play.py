@@ -170,13 +170,25 @@ class SelfPlayWorker:
             returns = []
             G = 0.0
 
-            # Terminal value: absolute score (not margin) for consistent
-            # cross-game targets. The value head learns "how good is this
-            # position for scoring points" — independent of opponent.
+            # Terminal value: either score-margin (Phase 1, when config
+            # enables it and the RL agent's score can differ meaningfully
+            # from the opponent's) or absolute score (Phase 0-style).
+            # Margin gives real variance when both sides play well; it
+            # collapses to ~0 in symmetric self-play, so absolute-score
+            # remains the default.
             if final_scores and colour in final_scores:
-                my_score = final_scores[colour]["final_score"]
                 norm = self.reward_shaper.config.score_normalization
-                G = my_score / norm
+                my_score = final_scores[colour]["final_score"]
+                if self.reward_shaper.config.use_score_margin:
+                    opp_scores = [
+                        s["final_score"]
+                        for c, s in final_scores.items() if c != colour
+                    ]
+                    opp_mean = (sum(opp_scores) / len(opp_scores)
+                                if opp_scores else 0.0)
+                    G = (my_score - opp_mean) / norm
+                else:
+                    G = my_score / norm
                 G = max(-1.0, min(1.0, G))
             elif game.winner == colour:
                 G = self.reward_shaper.config.win_reward

@@ -35,6 +35,13 @@ class RewardConfig:
     use_score_terminal: bool = True
     score_normalization: float = 1300.0  # max possible competition score
 
+    # Terminal value signal for self-play (Phase 1 fine-tuning).
+    # When True, the per-game value target in self_play.py uses
+    # (my_score - mean_opp_score) / score_normalization. This gives real
+    # variance when the RL agent and opponent play at similar levels
+    # (e.g. after Phase 0 imitation, both score ~1100 vs heuristic).
+    use_score_margin: bool = False
+
 
 class RewardShaper:
     """

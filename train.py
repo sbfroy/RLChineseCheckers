@@ -83,6 +83,7 @@ def build_reward_config(cfg: dict) -> RewardConfig:
         mobility_weight=rc.get("mobility_weight", 0.001),
         use_score_terminal=rc.get("use_score_terminal", True),
         score_normalization=rc.get("score_normalization", 1300.0),
+        use_score_margin=rc.get("use_score_margin", False),
     )
 
 

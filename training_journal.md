@@ -246,3 +246,64 @@ python3.10 training/supervised_bootstrap.py --num-games 2000 --epochs 30 --devic
 ```
 
 ---
+
+## [2026-04-18 13:00] Run Analysis
+
+**Phase:** supervised_bootstrap (Phase 0)
+**Run:** sup_20260418_090744
+**Config:** command-line args to `training/supervised_bootstrap.py`
+**Device:** cuda
+**Wall clock time:** ~43 min (generation 263s + training 2318s + eval)
+
+**Results:**
+- Training: 30 epochs, 277,773 experiences from 2000 games
+- Final train policy loss: 0.0441 (action accuracy 98.6%)
+- Final val policy loss: 0.4830 (**val action accuracy 91.5%**) — plateaued around epoch 10-15, mild overfit afterwards
+- Final train/val value loss: 0.0009 / 0.0011 (calibrated, narrow positive range)
+- Avg game length: 300.0 moves (still hits max — heuristic itself can't fully win)
+
+**Eval scores (vs each baseline, 5 games):**
+- vs random: **agent 973.6** (opp 300.2) — was 201-238 in AZ runs
+- vs greedy: **agent 1098.0** (opp 1098.0) — was 195-197; now ties greedy exactly
+- vs heuristic: **agent 640.2** (opp 1097.0) — was 195-196; now weaker-but-real play
+
+**Reward config used:** N/A (supervised learning — cross-entropy on teacher action, MSE on final_score/1300)
+
+**Strengths observed:**
+- Agent plays roughly at heuristic level — decisive pin-forward motion, no more clogging.
+- 5x jump in score vs greedy (195 → 1098), 4x jump vs random (237 → 974).
+- Value head learned a real distribution (std 0.051 in data, val loss 0.001).
+- Training accuracy 98.6% shows the network has capacity to represent the heuristic policy.
+
+**Weaknesses observed:**
+- Weaker than heuristic itself (640 vs 1097). Expected: the imitation is <100% accurate, so a few suboptimal moves per game accumulate.
+- No WINs (all games hit 300 moves). Structural — heuristic itself has this problem. Not blocking for the competition since scoring is what matters.
+- Val policy loss climbed from 0.33 (epoch 3) → 0.48 (epoch 30). Overfitting. For a rerun, we'd early-stop around epoch 10.
+- Value target range narrow [0.65, 0.85]. Fine for Phase 0, but will need widening for Phase 1 (otherwise value head becomes a near-constant predictor again).
+
+**Analysis:**
+Phase 0 landed. The bootstrap failure from AZ-from-scratch is solved — the network now has a sensible starting policy. Training loss curves are clean (smooth monotonic decrease, no instability). The gap between train and val accuracy (98.6% → 91.5%) is expected for imitation with 277k examples; it's not a blocker.
+
+The agent is already competitive vs random/greedy baselines. The remaining gap is vs heuristic (640 vs 1097). Two paths forward:
+1. **AZ refinement** (Phase 1) — use MCTS + self-play to improve past the teacher. This is the classic AlphaZero-style "learn beyond imitation" step.
+2. **More supervised** — add more teachers (mix in greedy demos, use ε-heuristic for state diversity), train with early stopping. Could push val acc toward 95%+ but caps at "as good as the teachers".
+
+**Decision:** Phase 1 — AZ refinement from the Phase 0 checkpoint. Goal: beat heuristic (>1097 vs heuristic's ~1097, i.e. agent becomes the stronger side).
+
+**Recommendation for next run (Phase 1):**
+
+Key config changes from previous AZ attempts:
+1. **Resume** from `checkpoints/sup_20260418_090744/model_best.pt` (NOT fresh init).
+2. **Switch to score-margin terminal** so the value head has real variance when RL plays at heuristic level vs heuristic (when both score ~1100, absolute-score terminal has no signal — we already proved this). Needs a `use_score_margin: true` flag added to RewardConfig + self_play.py.
+3. **Scale per-step rewards back up** now that pins actually reach the goal: distance_weight 0.05, pin_goal_weight 0.5, lagging_weight -0.01, home_exit_weight 0.1.
+4. **MCTS sims 100** (full strength, not light) — the network is now competent enough to exploit deeper search.
+5. **Short run first** — 20-30 iters to confirm we don't regress from Phase 0 level. Then extend.
+6. **Eval tip:** now that `select_action` samples when temperature > 0, the 5 eval games vs greedy/heuristic will actually vary.
+
+**Command:** *Awaiting approval to add `use_score_margin` flag to rewards.py + self_play.py and create `configs/phase1_refine.yaml` resuming from Phase 0. Once ready:*
+
+```bash
+./run_training.sh configs/phase1_refine.yaml --phase mcts_full --resume checkpoints/sup_20260418_090744/model_best.pt
+```
+
+---
