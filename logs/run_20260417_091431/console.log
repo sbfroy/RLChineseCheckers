@@ -1,0 +1,120 @@
+Auto-detected CUDA GPU: Tesla V100-SXM3-32GB
+Model: 7,188,477 parameters, device: cuda
+  Opponent: heuristic (HeuristicAgent)
+Starting training: 50 iterations
+  Run: run_20260417_091431 -> checkpoints/run_20260417_091431
+  Self-play: 40 games/iter, 2 players
+  Training: batch=128, epochs=5
+  MCTS: enabled (50 sims)
+  Logs: logs/run_20260417_091431
+
+Iter    1 | buf=  6000 | sp=875.6s | train=1.0s | p_loss=4.1099 | v_loss=0.1550 | lr=9.99e-04 | new_exp=6000
+Iter    2 | buf= 12000 | sp=872.5s | train=0.2s | p_loss=3.4992 | v_loss=0.0672 | lr=9.96e-04 | new_exp=6000
+Iter    3 | buf= 18000 | sp=884.3s | train=0.2s | p_loss=3.5617 | v_loss=0.0441 | lr=9.91e-04 | new_exp=6000
+Iter    4 | buf= 24000 | sp=882.5s | train=0.2s | p_loss=3.5711 | v_loss=0.0327 | lr=9.84e-04 | new_exp=6000
+Iter    5 | buf= 30000 | sp=879.6s | train=0.2s | p_loss=3.6011 | v_loss=0.0312 | lr=9.76e-04 | new_exp=6000
+Iter    6 | buf= 36000 | sp=886.2s | train=0.2s | p_loss=3.6117 | v_loss=0.0239 | lr=9.65e-04 | new_exp=6000
+Iter    7 | buf= 42000 | sp=894.2s | train=0.2s | p_loss=3.5915 | v_loss=0.0235 | lr=9.53e-04 | new_exp=6000
+Iter    8 | buf= 48000 | sp=887.6s | train=0.2s | p_loss=3.5756 | v_loss=0.0216 | lr=9.39e-04 | new_exp=6000
+Iter    9 | buf= 54000 | sp=885.9s | train=0.2s | p_loss=3.5863 | v_loss=0.0179 | lr=9.23e-04 | new_exp=6000
+Iter   10 | buf= 60000 | sp=894.4s | train=0.2s | p_loss=3.5781 | v_loss=0.0170 | lr=9.05e-04 | new_exp=6000
+  EVAL: {'random': {'win_rate': 0.0, 'avg_score': 237.9, 'avg_game_length': 300.0, 'avg_game_time': 9.06, 'wins': 0, 'losses': 0, 'draws': 20, 'num_games': 20}, 'greedy': {'win_rate': 0.0, 'avg_score': 195.0, 'avg_game_length': 300.0, 'avg_game_time': 8.92, 'wins': 0, 'losses': 0, 'draws': 20, 'num_games': 20}, 'heuristic': {'win_rate': 0.0, 'avg_score': 195.0, 'avg_game_length': 300.0, 'avg_game_time': 9.06, 'wins': 0, 'losses': 0, 'draws': 20, 'num_games': 20}, 'avg_score': 209.3}
+  Checkpoint saved: checkpoints/run_20260417_091431/model_best.pt
+  NEW BEST model (score=209.3)
+  Checkpoint saved: checkpoints/run_20260417_091431/model_iter_00010.pt
+Iter   11 | buf= 66000 | sp=885.6s | train=0.2s | p_loss=3.5690 | v_loss=0.0154 | lr=8.86e-04 | new_exp=6000
+Iter   12 | buf= 72000 | sp=885.4s | train=0.2s | p_loss=3.5397 | v_loss=0.0144 | lr=8.66e-04 | new_exp=6000
+Iter   13 | buf= 78000 | sp=880.6s | train=0.2s | p_loss=3.5501 | v_loss=0.0138 | lr=8.44e-04 | new_exp=6000
+Iter   14 | buf= 84000 | sp=884.2s | train=0.2s | p_loss=3.5338 | v_loss=0.0103 | lr=8.21e-04 | new_exp=6000
+Iter   15 | buf= 90000 | sp=890.8s | train=0.2s | p_loss=3.5361 | v_loss=0.0105 | lr=7.96e-04 | new_exp=6000
+Iter   16 | buf= 96000 | sp=886.6s | train=0.2s | p_loss=3.5341 | v_loss=0.0094 | lr=7.70e-04 | new_exp=6000
+Iter   17 | buf=102000 | sp=881.7s | train=0.2s | p_loss=3.5212 | v_loss=0.0090 | lr=7.43e-04 | new_exp=6000
+Iter   18 | buf=108000 | sp=881.9s | train=0.2s | p_loss=3.5369 | v_loss=0.0078 | lr=7.16e-04 | new_exp=6000
+Iter   19 | buf=114000 | sp=877.1s | train=0.2s | p_loss=3.5075 | v_loss=0.0069 | lr=6.87e-04 | new_exp=6000
+Iter   20 | buf=120000 | sp=879.4s | train=0.2s | p_loss=3.4937 | v_loss=0.0065 | lr=6.58e-04 | new_exp=6000
+  EVAL: {'random': {'win_rate': 0.0, 'avg_score': 211.2, 'avg_game_length': 300.0, 'avg_game_time': 8.98, 'wins': 0, 'losses': 0, 'draws': 20, 'num_games': 20}, 'greedy': {'win_rate': 0.0, 'avg_score': 195.0, 'avg_game_length': 300.0, 'avg_game_time': 8.87, 'wins': 0, 'losses': 0, 'draws': 20, 'num_games': 20}, 'heuristic': {'win_rate': 0.0, 'avg_score': 195.0, 'avg_game_length': 300.0, 'avg_game_time': 8.95, 'wins': 0, 'losses': 0, 'draws': 20, 'num_games': 20}, 'avg_score': 200.4}
+  Checkpoint saved: checkpoints/run_20260417_091431/model_iter_00020.pt
+Iter   21 | buf=126000 | sp=883.5s | train=0.2s | p_loss=3.5159 | v_loss=0.0062 | lr=6.28e-04 | new_exp=6000
+Iter   22 | buf=132000 | sp=878.9s | train=0.2s | p_loss=3.5247 | v_loss=0.0061 | lr=5.98e-04 | new_exp=6000
+Iter   23 | buf=138000 | sp=890.3s | train=0.2s | p_loss=3.5116 | v_loss=0.0068 | lr=5.67e-04 | new_exp=6000
+Iter   24 | buf=143943 | sp=886.3s | train=0.2s | p_loss=3.5407 | v_loss=0.0057 | lr=5.36e-04 | new_exp=5943
+Iter   25 | buf=149943 | sp=916.2s | train=0.2s | p_loss=3.5418 | v_loss=0.0066 | lr=5.05e-04 | new_exp=6000
+Iter   26 | buf=155943 | sp=887.0s | train=0.2s | p_loss=3.5459 | v_loss=0.0068 | lr=4.74e-04 | new_exp=6000
+Iter   27 | buf=161943 | sp=891.9s | train=0.2s | p_loss=3.5447 | v_loss=0.0083 | lr=4.43e-04 | new_exp=6000
+Iter   28 | buf=167943 | sp=882.8s | train=0.2s | p_loss=3.4984 | v_loss=0.0050 | lr=4.12e-04 | new_exp=6000
+Iter   29 | buf=173943 | sp=883.9s | train=0.2s | p_loss=3.5071 | v_loss=0.0051 | lr=3.82e-04 | new_exp=6000
+Iter   30 | buf=179943 | sp=882.0s | train=0.2s | p_loss=3.4964 | v_loss=0.0055 | lr=3.52e-04 | new_exp=6000
+  EVAL: {'random': {'win_rate': 0.0, 'avg_score': 205.8, 'avg_game_length': 300.0, 'avg_game_time': 9.11, 'wins': 0, 'losses': 0, 'draws': 20, 'num_games': 20}, 'greedy': {'win_rate': 0.0, 'avg_score': 195.0, 'avg_game_length': 300.0, 'avg_game_time': 8.85, 'wins': 0, 'losses': 0, 'draws': 20, 'num_games': 20}, 'heuristic': {'win_rate': 0.0, 'avg_score': 195.0, 'avg_game_length': 300.0, 'avg_game_time': 8.95, 'wins': 0, 'losses': 0, 'draws': 20, 'num_games': 20}, 'avg_score': 198.6}
+  Checkpoint saved: checkpoints/run_20260417_091431/model_iter_00030.pt
+Iter   31 | buf=185943 | sp=885.6s | train=0.2s | p_loss=3.5096 | v_loss=0.0051 | lr=3.23e-04 | new_exp=6000
+Iter   32 | buf=191943 | sp=881.1s | train=0.3s | p_loss=3.5102 | v_loss=0.0050 | lr=2.94e-04 | new_exp=6000
+Iter   33 | buf=197943 | sp=884.9s | train=0.2s | p_loss=3.5168 | v_loss=0.0061 | lr=2.67e-04 | new_exp=6000
+Iter   34 | buf=200000 | sp=1012.8s | train=0.3s | p_loss=3.5089 | v_loss=0.0062 | lr=2.40e-04 | new_exp=6000
+Iter   35 | buf=200000 | sp=1070.6s | train=0.3s | p_loss=3.5252 | v_loss=0.0057 | lr=2.14e-04 | new_exp=6000
+Iter   36 | buf=200000 | sp=1024.5s | train=0.2s | p_loss=3.4980 | v_loss=0.0046 | lr=1.89e-04 | new_exp=6000
+Iter   37 | buf=200000 | sp=889.4s | train=0.2s | p_loss=3.5158 | v_loss=0.0060 | lr=1.66e-04 | new_exp=6000
+Iter   38 | buf=200000 | sp=887.2s | train=0.2s | p_loss=3.4755 | v_loss=0.0050 | lr=1.44e-04 | new_exp=6000
+Iter   39 | buf=200000 | sp=887.9s | train=0.2s | p_loss=3.5144 | v_loss=0.0079 | lr=1.24e-04 | new_exp=6000
+Iter   40 | buf=200000 | sp=887.1s | train=0.3s | p_loss=3.4891 | v_loss=0.0057 | lr=1.05e-04 | new_exp=6000
+  EVAL: {'random': {'win_rate': 0.0, 'avg_score': 201.3, 'avg_game_length': 300.0, 'avg_game_time': 9.17, 'wins': 0, 'losses': 0, 'draws': 20, 'num_games': 20}, 'greedy': {'win_rate': 0.0, 'avg_score': 197.0, 'avg_game_length': 300.0, 'avg_game_time': 8.87, 'wins': 0, 'losses': 0, 'draws': 20, 'num_games': 20}, 'heuristic': {'win_rate': 0.0, 'avg_score': 196.0, 'avg_game_length': 300.0, 'avg_game_time': 8.84, 'wins': 0, 'losses': 0, 'draws': 20, 'num_games': 20}, 'avg_score': 198.1}
+  Checkpoint saved: checkpoints/run_20260417_091431/model_iter_00040.pt
+Iter   41 | buf=200000 | sp=876.4s | train=0.2s | p_loss=3.4993 | v_loss=0.0067 | lr=8.71e-05 | new_exp=6000
+Iter   42 | buf=200000 | sp=877.9s | train=0.2s | p_loss=3.4947 | v_loss=0.0054 | lr=7.12e-05 | new_exp=6000
+Iter   43 | buf=200000 | sp=880.6s | train=0.2s | p_loss=3.4842 | v_loss=0.0054 | lr=5.71e-05 | new_exp=6000
+Iter   44 | buf=200000 | sp=890.0s | train=0.2s | p_loss=3.4966 | v_loss=0.0054 | lr=4.48e-05 | new_exp=6000
+Iter   45 | buf=200000 | sp=885.6s | train=0.2s | p_loss=3.5028 | v_loss=0.0062 | lr=3.42e-05 | new_exp=6000
+Iter   46 | buf=200000 | sp=880.3s | train=0.2s | p_loss=3.4968 | v_loss=0.0047 | lr=2.56e-05 | new_exp=6000
+Iter   47 | buf=200000 | sp=877.6s | train=0.2s | p_loss=3.4862 | v_loss=0.0058 | lr=1.88e-05 | new_exp=6000
+Iter   48 | buf=200000 | sp=882.0s | train=0.2s | p_loss=3.4710 | v_loss=0.0055 | lr=1.39e-05 | new_exp=6000
+Iter   49 | buf=200000 | sp=887.0s | train=0.3s | p_loss=3.4764 | v_loss=0.0055 | lr=1.10e-05 | new_exp=6000
+Iter   50 | buf=200000 | sp=897.1s | train=0.3s | p_loss=3.4942 | v_loss=0.0056 | lr=1.00e-05 | new_exp=6000
+  EVAL: {'random': {'win_rate': 0.0, 'avg_score': 212.0, 'avg_game_length': 300.0, 'avg_game_time': 9.29, 'wins': 0, 'losses': 0, 'draws': 20, 'num_games': 20}, 'greedy': {'win_rate': 0.0, 'avg_score': 197.0, 'avg_game_length': 300.0, 'avg_game_time': 9.0, 'wins': 0, 'losses': 0, 'draws': 20, 'num_games': 20}, 'heuristic': {'win_rate': 0.0, 'avg_score': 196.0, 'avg_game_length': 300.0, 'avg_game_time': 8.99, 'wins': 0, 'losses': 0, 'draws': 20, 'num_games': 20}, 'avg_score': 201.7}
+  Checkpoint saved: checkpoints/run_20260417_091431/model_iter_00050.pt
+  Checkpoint saved: checkpoints/run_20260417_091431/model_final.pt
+
+=== Final Evaluation ===
+
+vs random:
+  Game 1: winner=draw, moves=300, time=22.6s, a_score=195, b_score=215
+  Game 2: winner=draw, moves=300, time=24.0s, a_score=193, b_score=222
+  Game 3: winner=draw, moves=300, time=22.9s, a_score=191, b_score=223
+  Game 4: winner=draw, moves=300, time=22.1s, a_score=191, b_score=221
+  Game 5: winner=draw, moves=300, time=22.3s, a_score=203, b_score=228
+  Game 6: winner=draw, moves=300, time=23.2s, a_score=200, b_score=221
+  Game 7: winner=draw, moves=300, time=22.5s, a_score=195, b_score=225
+  Game 8: winner=draw, moves=300, time=22.2s, a_score=195, b_score=213
+  Game 9: winner=draw, moves=300, time=22.9s, a_score=195, b_score=229
+  Game 10: winner=draw, moves=300, time=22.4s, a_score=195, b_score=235
+  Win rate: 0% (0W / 0L / 10D)
+  Avg score: agent=195, baseline=223
+  Avg game length: 300 moves
+
+vs greedy:
+  Game 1: winner=draw, moves=300, time=22.0s, a_score=195, b_score=590
+  Game 2: winner=draw, moves=300, time=22.1s, a_score=195, b_score=590
+  Game 3: winner=draw, moves=300, time=21.9s, a_score=195, b_score=590
+  Game 4: winner=draw, moves=300, time=22.5s, a_score=195, b_score=590
+  Game 5: winner=draw, moves=300, time=22.8s, a_score=195, b_score=590
+  Game 6: winner=draw, moves=300, time=21.8s, a_score=195, b_score=590
+  Game 7: winner=draw, moves=300, time=21.9s, a_score=195, b_score=590
+  Game 8: winner=draw, moves=300, time=21.9s, a_score=195, b_score=590
+  Game 9: winner=draw, moves=300, time=21.9s, a_score=195, b_score=590
+  Game 10: winner=draw, moves=300, time=22.0s, a_score=195, b_score=590
+  Win rate: 0% (0W / 0L / 10D)
+  Avg score: agent=195, baseline=590
+  Avg game length: 300 moves
+
+vs heuristic:
+  Game 1: winner=draw, moves=300, time=23.0s, a_score=195, b_score=487
+  Game 2: winner=draw, moves=300, time=22.2s, a_score=195, b_score=487
+  Game 3: winner=draw, moves=300, time=22.1s, a_score=195, b_score=487
+  Game 4: winner=draw, moves=300, time=22.3s, a_score=195, b_score=487
+  Game 5: winner=draw, moves=300, time=22.3s, a_score=195, b_score=487
+  Game 6: winner=draw, moves=300, time=22.1s, a_score=195, b_score=487
+  Game 7: winner=draw, moves=300, time=23.0s, a_score=195, b_score=487
+  Game 8: winner=draw, moves=300, time=22.3s, a_score=195, b_score=487
+  Game 9: winner=draw, moves=300, time=22.1s, a_score=195, b_score=487
+  Game 10: winner=draw, moves=300, time=22.2s, a_score=195, b_score=487
+  Win rate: 0% (0W / 0L / 10D)
+  Avg score: agent=195, baseline=487
+  Avg game length: 300 moves
