@@ -307,3 +307,79 @@ Key config changes from previous AZ attempts:
 ```
 
 ---
+
+## [2026-04-20 19:50] Run Analysis
+
+**Phase:** mcts_full (Phase 1 refinement)
+**Run:** run_20260418_101611
+**Config:** configs/phase1_refine.yaml
+**Device:** cuda (Tesla V100-SXM3-32GB)
+**Wall clock time:** ~15h 45min (2026-04-18 10:16 → 2026-04-19 02:01)
+
+**Results:**
+- Iterations completed: 30 / 30 (resumed from Phase 0 iter 30)
+- Final policy loss: 2.1602 (trend: U-shape — fell 0.85 → 0.52 (iter 1-3), then **climbed monotonically to 2.16**)
+- Final value loss: 0.0371 (trend: collapsed 2.68 → 0.04, value head learned to predict near-constant negative margin)
+- Avg game length: 300.0 moves (100% hit max — unchanged from all prior runs)
+- Win rates: vs random 0%, vs greedy 0%, vs heuristic 0% (all draws)
+- Avg scores (final): vs random 441.2, vs greedy 213.2, vs heuristic 447.4 → avg 367.3
+- Avg scores at iter 5 (best): vs random 952.4, vs greedy 1098.0, vs heuristic 540.4 → avg 863.6
+- Best checkpoint: model_best.pt at iter 5 (score 863.6) — **then never beaten**
+
+**Reward config used:**
+- pin_goal_weight: 0.5, distance_weight: 0.05, lagging_weight: -0.01, home_exit_weight: 0.1
+- use_score_margin: true, opponent: heuristic, MCTS sims: 100
+
+**Strengths observed:**
+- Iter 5 eval (avg 863.6) confirms the resume from Phase 0 worked — the loaded weights were intact and competitive.
+- Self-play infrastructure stable for 15+ hours with no crashes.
+
+**Weaknesses observed:**
+- **Catastrophic regression**: avg score collapsed 863 → 300 by iter 10, recovered partially to 367 by iter 30 — net loss of ~60% from Phase 0 baseline.
+- vs greedy collapsed worst (1098 → 213, an 80% loss). Agent went from tying greedy to scoring a third of greedy's pins.
+- Policy loss climbing monotonically iter 5 → 30 (0.52 → 2.16) is the smoking gun for catastrophic forgetting of the supervised prior.
+- vs heuristic eval still produces near-identical games (4 of 5 final-eval games scored 357 exactly) — the temperature-sampling fix from Phase 0 doesn't fully de-determinize MCTS-driven play when value head is saturated.
+
+**Analysis — what went wrong:**
+
+Phase 1 took a working 974/1098/640 agent and turned it into a 441/213/447 agent. The collapse pattern points to **catastrophic forgetting driven by toxic value signal**:
+
+1. **Value head learned "I always lose"** (value loss 2.68 → 0.04). With `use_score_margin: true` and the agent always losing to HeuristicAgent (typical margin: -0.5 to -0.8), the variance in the value target was small enough that a near-constant predictor minimizes MSE. The value head provides no positional discrimination.
+2. **MCTS visit counts went uniform.** Without value-head discrimination, 100 sims over ~50 legal moves trends toward uniform visits. Policy targets become low-information.
+3. **Policy loss climbed (0.52 → 2.16)** because the network was being pulled away from its peaked Phase-0 distribution toward near-uniform MCTS targets — destroying the imitation prior.
+4. **Learning rate too high for fine-tuning.** `lr=3e-4` with cosine schedule is fresh-init magnitude. Standard practice for fine-tuning is 10-30x lower (3e-5 to 1e-5). Combined with no regularization to the prior (no KL anchor), forgetting was inevitable.
+5. **Heuristic-opponent mode is a dead-end at this skill level.** The Phase-0 agent loses ~640 vs ~1097 — too far behind for margin to vary meaningfully. We needed self-play (now feasible because Phase 0 broke symmetry already by being non-trivial).
+
+The iteration-5 eval shows what should have happened all along: 863 avg, matching Phase 0. Continuing past that point actively destroyed the agent.
+
+**Note on checkpoints:** Local `checkpoints/` only contains stale March files; the actual Phase 0 and Phase 1 `.pt` files live on the UiA school machine where training runs. Logs are synced to local; checkpoints are not. Phase 0 weights are still available for resume on the school side.
+
+**Comparison to previous runs:** Unlike the three pre-Phase-0 runs that started from random init and stayed at ~200 score, this run started competent and got actively worse. That's a more useful failure mode — it shows the training loop *does* respond to gradients, just in the wrong direction. The fix is to constrain the gradient direction, not to find more signal.
+
+**Decision:** Do NOT relaunch Phase 1 with the current config. The Phase 0 weights are still on the school machine; resume from those, with fundamentally different settings.
+
+Phase 0 is already competitive: 974 vs random and 1098 vs greedy comfortably exceed the >800 vs greedy stretch goal. The 640 vs heuristic gap is the only real weakness, and it may not matter — heuristic is internal, not a competitor agent. The default plan should be **ship Phase 0**, with Phase 1 attempts treated as bonus upside.
+
+**Recommendation for next run** — short, gated Phase 1 v2:
+- Resume from Phase 0 best checkpoint (the same one used by run_20260418_101611).
+- Edit `configs/phase1_refine.yaml` (after archiving the current copy):
+  - `learning_rate: 0.00003` (10x lower — fine-tuning, not fresh init)
+  - `opponent: self` (drop heuristic — agent always loses to it, value head can't discriminate)
+  - `num_iterations: 10` (validation gate; if iter 5 eval drops below Phase 0 baseline of ~860, kill the run before wasting 15 hours)
+- Optional but recommended: add a **KL anchor to a frozen Phase-0 prior** in the trainer's policy loss (`loss += β * KL(π_net || π_prior)` with β ~ 0.5–1.0). Without this, the policy will drift toward MCTS uniform again. Requires a code change to `training/trainer.py`.
+- Keep score-margin terminal — it's the right choice for self-play (variance comes from the asymmetry the trainer introduces between current weights and replay-buffer states).
+
+**Even simpler alternative (no code change):** declare Phase 0 the competition agent, spend remaining time on multi-player (4/6) testing, server-integration verification, and timing measurements (<2s/move on competition hardware). This is the pragmatic call given 115 GPU hours invested and a working agent in hand.
+
+**Command** (Phase 1 v2 — gated 10-iter validation):
+
+```bash
+# On the school machine:
+cp configs/phase1_refine.yaml configs/archive/phase1_refine_20260420.yaml
+# Edit configs/phase1_refine.yaml: learning_rate: 0.00003, opponent: self, num_iterations: 10
+./run_training.sh configs/phase1_refine.yaml --phase mcts_full --resume checkpoints/sup_20260418_090744/model_best.pt
+```
+
+If the iter-5 eval comes in below ~700 avg score, kill it and ship Phase 0 instead.
+
+---

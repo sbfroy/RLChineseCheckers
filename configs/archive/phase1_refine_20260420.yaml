@@ -16,12 +16,12 @@ model:
   value_hidden: 128
 
 training:
-  num_iterations: 10
+  num_iterations: 30
   num_games_per_iteration: 40
   num_players: 2
   batch_size: 128
   epochs_per_iteration: 5
-  learning_rate: 0.00003
+  learning_rate: 0.0003
   weight_decay: 0.0001
   policy_loss_weight: 1.0
   value_loss_weight: 1.0
@@ -32,7 +32,7 @@ training:
   checkpoint_every: 5
   eval_every: 5
   device: cuda
-  opponent: self
+  opponent: heuristic
 
 mcts:
   num_simulations: 100
