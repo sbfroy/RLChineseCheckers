@@ -383,3 +383,62 @@ cp configs/phase1_refine.yaml configs/archive/phase1_refine_20260420.yaml
 If the iter-5 eval comes in below ~700 avg score, kill it and ship Phase 0 instead.
 
 ---
+
+## [2026-04-21 09:00] Run Analysis
+
+**Phase:** mcts_full (Phase 1 v2 — gated refinement)
+**Run:** run_20260420_181217
+**Config:** configs/phase1_refine.yaml (lr=3e-5, opponent=self, num_iterations=10)
+**Device:** cuda (Tesla V100-SXM3-32GB)
+**Wall clock time:** ~10h 55min (2026-04-20 18:12 → 2026-04-21 05:07)
+
+**Results:**
+- Iterations completed: 10 / 10 (resumed from Phase 0 iter 30)
+- Final policy loss: 0.5675 (trend: stable ~0.63-0.73, gentle decrease — **no more blow-up** like v1)
+- Final value loss: 2.8743 (trend: 2.75 → 2.87, stable high — **real signal from score-margin in self-play**; v1 had collapsed to 0.04)
+- Avg game length: 300.0 moves (100% hit max)
+- Win rates (final 10-game eval): vs random **10%** (1W/9D), vs greedy 0%, vs heuristic 0%
+- Avg scores (iter 5 eval): vs random 738.4, vs greedy 1098.0, vs heuristic 408.6 → avg **748.3** (gate ≥700 met)
+- Avg scores (iter 10 eval): vs random 867.6, vs greedy 1098.0, vs heuristic 510.4 → avg **825.3**
+- Avg scores (final 10-game eval): vs random 952 (inc. one 1300!), vs greedy 1098, vs heuristic 483
+- Best checkpoint: model_best.pt at iter 10 (score 825.3)
+
+**Reward config used:**
+- pin_goal_weight: 0.5, distance_weight: 0.05, lagging_weight: -0.01, home_exit_weight: 0.1
+- use_score_margin: true, opponent: self (self-play), MCTS sims: 100, lr: 3e-5 cosine → 1e-5
+
+**Strengths observed:**
+- **Catastrophic forgetting fix worked**: policy loss stayed ~0.6 instead of climbing to 2.2 like v1. 10x-lower LR + self-play (instead of unwinnable-vs-heuristic) is the right recipe.
+- **First-ever outright WIN** in training-log history: Game 9 vs random, 295 moves, agent 1300 / random 240. Previously every game across 115+ GPU hours ended in max_moves.
+- **Monotonic improvement** iter 5 → iter 10 (+77 avg score). Still learning at end of run.
+- Value loss ~2.87 sustained — self-play produces real margin variance, unlike heuristic-opponent mode where the agent always lost by a constant.
+- Gate passed cleanly (748.3 ≥ 700).
+
+**Weaknesses observed:**
+- Still **below Phase 0 baseline** (825 vs 904 avg). vs random down 106, vs heuristic down 130. Ties greedy but no better.
+- vs heuristic eval remains deterministic-looking (9 of 10 games scored 468-480) — temperature sampling alone doesn't fully de-determinize MCTS-driven play when value head dominates.
+
+**Analysis:**
+This is the first Phase 1 attempt that didn't destroy the model. The v1 diagnosis was correct: the 10x LR reduction + self-play opponent stopped the forgetting. Value loss staying high (2.87) confirms the score-margin signal is alive — in self-play the two copies diverge early, producing real per-game margin variance that wasn't available in the "always lose to heuristic" setup.
+
+Net-net: we spent 11 hours to end up ~80 points below Phase 0. But the **trajectory** is positive (+77 in the last 5 iters), and we've cleared a wall we'd never cleared before (actual WIN). The cosine LR has wound down to 1e-5 — effectively no learning — so extending the current run would do little. A fresh cosine cycle from the v2 best, with 20 more iters, should push past Phase 0.
+
+**Decision:** Continue — extend Phase 1 by 20 more iterations, resuming from v2 best, with a fresh LR schedule.
+
+**Recommendation for next run:**
+- Archive current config: `cp configs/phase1_refine.yaml configs/archive/phase1_refine_20260421.yaml`
+- Edit `configs/phase1_refine.yaml`: `num_iterations: 20` (fresh cosine from 3e-5 → 1e-5). Everything else unchanged.
+- Resume from `checkpoints/run_20260420_181217/model_best.pt` (the v2 best — 825.3 avg), NOT from Phase 0. This keeps the recovery progress.
+- **Gate:** if iter 10 eval < 825 (v2 baseline), kill and ship Phase 0. If iter 10 ≥ 900 (match Phase 0), continue; if ≥ 950 (beat Phase 0), this becomes the competition model.
+- Keep eval_every: 5 to catch regression early.
+- **Fallback is still solid:** Phase 0 checkpoint (avg 904) remains the shipping candidate if this extension stalls.
+
+**Command:**
+```bash
+# On the school machine:
+cp configs/phase1_refine.yaml configs/archive/phase1_refine_20260421.yaml
+# Edit configs/phase1_refine.yaml: num_iterations: 20
+./run_training.sh configs/phase1_refine.yaml --phase mcts_full --resume checkpoints/run_20260420_181217/model_best.pt
+```
+
+---
