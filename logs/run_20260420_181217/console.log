@@ -1,0 +1,77 @@
+Auto-detected CUDA GPU: Tesla V100-SXM3-32GB
+Model: 7,188,477 parameters, device: cuda
+Resumed from iteration 30
+  WARNING: Unknown opponent 'self', using self-play
+Starting training: 10 iterations
+  Run: run_20260420_181217 -> checkpoints/run_20260420_181217
+  Self-play: 40 games/iter, 2 players
+  Training: batch=128, epochs=5
+  MCTS: enabled (100 sims)
+  Logs: logs/run_20260420_181217
+
+Iter    1 | buf= 12000 | sp=3933.8s | train=1.0s | p_loss=0.7281 | v_loss=2.7534 | lr=2.95e-05 | new_exp=12000
+Iter    2 | buf= 24000 | sp=4165.5s | train=0.2s | p_loss=0.7270 | v_loss=2.9433 | lr=2.81e-05 | new_exp=12000
+Iter    3 | buf= 36000 | sp=3876.7s | train=0.2s | p_loss=0.6450 | v_loss=2.9339 | lr=2.59e-05 | new_exp=12000
+Iter    4 | buf= 48000 | sp=3994.4s | train=0.2s | p_loss=0.6781 | v_loss=2.8754 | lr=2.31e-05 | new_exp=12000
+Iter    5 | buf= 60000 | sp=3836.2s | train=0.2s | p_loss=0.6330 | v_loss=2.8369 | lr=2.00e-05 | new_exp=12000
+  EVAL: {'random': {'win_rate': 0.0, 'avg_score': 738.4, 'avg_game_length': 300.0, 'avg_game_time': 9.62, 'wins': 0, 'losses': 0, 'draws': 5, 'num_games': 5}, 'greedy': {'win_rate': 0.0, 'avg_score': 1098.0, 'avg_game_length': 300.0, 'avg_game_time': 9.13, 'wins': 0, 'losses': 0, 'draws': 5, 'num_games': 5}, 'heuristic': {'win_rate': 0.0, 'avg_score': 408.6, 'avg_game_length': 300.0, 'avg_game_time': 9.64, 'wins': 0, 'losses': 0, 'draws': 5, 'num_games': 5}, 'avg_score': 748.3}
+  Checkpoint saved: checkpoints/run_20260420_181217/model_best.pt
+  NEW BEST model (score=748.3)
+  Checkpoint saved: checkpoints/run_20260420_181217/model_iter_00005.pt
+Iter    6 | buf= 72000 | sp=3812.3s | train=0.2s | p_loss=0.6683 | v_loss=2.8951 | lr=1.69e-05 | new_exp=12000
+Iter    7 | buf= 84000 | sp=3805.2s | train=0.2s | p_loss=0.6706 | v_loss=2.8798 | lr=1.41e-05 | new_exp=12000
+Iter    8 | buf= 96000 | sp=3825.7s | train=0.2s | p_loss=0.6720 | v_loss=2.8714 | lr=1.19e-05 | new_exp=12000
+Iter    9 | buf=108000 | sp=3830.8s | train=0.2s | p_loss=0.6388 | v_loss=2.8695 | lr=1.05e-05 | new_exp=12000
+Iter   10 | buf=120000 | sp=3928.9s | train=0.2s | p_loss=0.5675 | v_loss=2.8743 | lr=1.00e-05 | new_exp=12000
+  EVAL: {'random': {'win_rate': 0.0, 'avg_score': 867.6, 'avg_game_length': 300.0, 'avg_game_time': 9.43, 'wins': 0, 'losses': 0, 'draws': 5, 'num_games': 5}, 'greedy': {'win_rate': 0.0, 'avg_score': 1098.0, 'avg_game_length': 300.0, 'avg_game_time': 9.28, 'wins': 0, 'losses': 0, 'draws': 5, 'num_games': 5}, 'heuristic': {'win_rate': 0.0, 'avg_score': 510.4, 'avg_game_length': 300.0, 'avg_game_time': 9.57, 'wins': 0, 'losses': 0, 'draws': 5, 'num_games': 5}, 'avg_score': 825.3}
+  Checkpoint saved: checkpoints/run_20260420_181217/model_best.pt
+  NEW BEST model (score=825.3)
+  Checkpoint saved: checkpoints/run_20260420_181217/model_iter_00010.pt
+  Checkpoint saved: checkpoints/run_20260420_181217/model_final.pt
+
+=== Final Evaluation ===
+
+vs random:
+  Game 1: winner=draw, moves=300, time=23.4s, a_score=995, b_score=236
+  Game 2: winner=draw, moves=300, time=22.8s, a_score=893, b_score=232
+  Game 3: winner=draw, moves=300, time=23.0s, a_score=889, b_score=238
+  Game 4: winner=draw, moves=300, time=24.7s, a_score=789, b_score=246
+  Game 5: winner=draw, moves=300, time=23.8s, a_score=891, b_score=233
+  Game 6: winner=draw, moves=300, time=23.4s, a_score=890, b_score=230
+  Game 7: winner=draw, moves=300, time=23.8s, a_score=893, b_score=253
+  Game 8: winner=draw, moves=300, time=23.5s, a_score=996, b_score=226
+  Game 9: winner=red, moves=295, time=23.1s, a_score=1300, b_score=240
+  Game 10: winner=draw, moves=300, time=23.6s, a_score=988, b_score=244
+  Win rate: 10% (1W / 0L / 9D)
+  Avg score: agent=952, baseline=238
+  Avg game length: 300 moves
+
+vs greedy:
+  Game 1: winner=draw, moves=300, time=23.0s, a_score=1098, b_score=1098
+  Game 2: winner=draw, moves=300, time=22.3s, a_score=1098, b_score=1098
+  Game 3: winner=draw, moves=300, time=22.5s, a_score=1098, b_score=1098
+  Game 4: winner=draw, moves=300, time=22.9s, a_score=1098, b_score=1098
+  Game 5: winner=draw, moves=300, time=21.9s, a_score=1098, b_score=1098
+  Game 6: winner=draw, moves=300, time=21.9s, a_score=1098, b_score=1098
+  Game 7: winner=draw, moves=300, time=22.4s, a_score=1098, b_score=1098
+  Game 8: winner=draw, moves=300, time=22.0s, a_score=1098, b_score=1098
+  Game 9: winner=draw, moves=300, time=22.9s, a_score=1098, b_score=1098
+  Game 10: winner=draw, moves=300, time=22.2s, a_score=1098, b_score=1098
+  Win rate: 0% (0W / 0L / 10D)
+  Avg score: agent=1098, baseline=1098
+  Avg game length: 300 moves
+
+vs heuristic:
+  Game 1: winner=draw, moves=300, time=23.7s, a_score=468, b_score=1098
+  Game 2: winner=draw, moves=300, time=22.8s, a_score=475, b_score=1098
+  Game 3: winner=draw, moves=300, time=23.7s, a_score=468, b_score=1098
+  Game 4: winner=draw, moves=300, time=23.2s, a_score=367, b_score=1097
+  Game 5: winner=draw, moves=300, time=23.4s, a_score=475, b_score=1098
+  Game 6: winner=draw, moves=300, time=22.9s, a_score=475, b_score=1098
+  Game 7: winner=draw, moves=300, time=23.8s, a_score=468, b_score=1098
+  Game 8: winner=draw, moves=300, time=23.0s, a_score=480, b_score=1098
+  Game 9: winner=draw, moves=300, time=23.4s, a_score=475, b_score=1098
+  Game 10: winner=draw, moves=300, time=23.3s, a_score=682, b_score=1098
+  Win rate: 0% (0W / 0L / 10D)
+  Avg score: agent=483, baseline=1098
+  Avg game length: 300 moves
