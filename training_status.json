@@ -1,23 +1,23 @@
 {
   "status": "finished",
   "phase": "mcts_full",
-  "run_name": "run_20260420_181217",
+  "run_name": "run_20260421_070417",
   "config_file": "configs/phase1_refine.yaml",
-  "started_at": "2026-04-20T18:12:27.842276",
-  "finished_at": "2026-04-21T05:07:24.413554",
-  "pid": 3307219,
-  "current_iteration": 10,
-  "total_iterations": 10,
+  "started_at": "2026-04-21T07:04:30.266480",
+  "finished_at": "2026-04-22T04:52:19.937698",
+  "pid": 3443106,
+  "current_iteration": 20,
+  "total_iterations": 20,
   "latest_metrics": {
-    "policy_loss": 0.5675432920455933,
-    "value_loss": 2.8742793560028077
+    "policy_loss": 0.6027693271636962,
+    "value_loss": 2.2703386783599853
   },
   "latest_eval": {
     "random": {
       "win_rate": 0.0,
-      "avg_score": 867.6,
+      "avg_score": 892.4,
       "avg_game_length": 300.0,
-      "avg_game_time": 9.43,
+      "avg_game_time": 9.62,
       "wins": 0,
       "losses": 0,
       "draws": 5,
@@ -27,7 +27,7 @@
       "win_rate": 0.0,
       "avg_score": 1098.0,
       "avg_game_length": 300.0,
-      "avg_game_time": 9.28,
+      "avg_game_time": 9.3,
       "wins": 0,
       "losses": 0,
       "draws": 5,
@@ -35,14 +35,14 @@
     },
     "heuristic": {
       "win_rate": 0.0,
-      "avg_score": 510.4,
+      "avg_score": 428.6,
       "avg_game_length": 300.0,
-      "avg_game_time": 9.57,
+      "avg_game_time": 10.31,
       "wins": 0,
       "losses": 0,
       "draws": 5,
       "num_games": 5
     },
-    "avg_score": 825.3
+    "avg_score": 806.3
   }
 }
