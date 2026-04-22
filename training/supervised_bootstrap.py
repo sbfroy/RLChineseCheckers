@@ -189,6 +189,9 @@ def train_model(model, data, device, epochs, batch_size, lr, weight_decay,
                                  weight_decay=weight_decay)
 
     history = []
+    best_val_pol = float("inf")
+    best_state = None
+    best_epoch = 0
     for epoch in range(1, epochs + 1):
         model.train()
         total_pol, total_val, n = 0.0, 0.0, 0
@@ -250,15 +253,22 @@ def train_model(model, data, device, epochs, batch_size, lr, weight_decay,
             "seconds": round(time.time() - t0, 1),
         }
         history.append(entry)
+        improved = entry["val_policy_loss"] < best_val_pol
+        if improved:
+            best_val_pol = entry["val_policy_loss"]
+            best_state = {k: v.detach().cpu().clone()
+                          for k, v in model.state_dict().items()}
+            best_epoch = epoch
         print(
             f"Epoch {epoch:3d}/{epochs} | "
             f"pol={entry['policy_loss']:.4f} val_pol={entry['val_policy_loss']:.4f} | "
             f"v={entry['value_loss']:.4f} val_v={entry['val_value_loss']:.4f} | "
             f"acc={entry['action_accuracy']:.3f} val_acc={entry['val_action_accuracy']:.3f} | "
             f"{entry['seconds']:.1f}s"
+            + ("  <- new best" if improved else "")
         )
 
-    return history
+    return history, best_state, best_epoch
 
 
 def evaluate_agent_quick(model, device, num_games=5):
@@ -371,7 +381,7 @@ def main():
 
     print("\n=== Training ===")
     t0 = time.time()
-    history = train_model(
+    history, best_state, best_epoch = train_model(
         model, data,
         device=args.device,
         epochs=args.epochs,
@@ -382,17 +392,36 @@ def main():
     )
     train_time = time.time() - t0
     print(f"Trained {args.epochs} epochs in {train_time:.1f}s")
+    if best_state is not None:
+        print(f"  Best val_policy_loss at epoch {best_epoch} "
+              f"(val_pol={history[best_epoch-1]['val_policy_loss']:.4f})")
 
-    print("\n=== Saving checkpoint ===")
-    ckpt_path = os.path.join(ckpt_dir, "model_best.pt")
+    print("\n=== Saving checkpoints ===")
+    final_path = os.path.join(ckpt_dir, "model_final.pt")
     torch.save({
         "iteration": args.epochs,
         "run_name": args.run_name,
         "model_state_dict": model.state_dict(),
         "history": history,
         "args": vars(args),
+    }, final_path)
+    print(f"  Saved final (epoch {args.epochs}): {final_path}")
+
+    ckpt_path = os.path.join(ckpt_dir, "model_best.pt")
+    save_state = best_state if best_state is not None else model.state_dict()
+    torch.save({
+        "iteration": best_epoch if best_state is not None else args.epochs,
+        "run_name": args.run_name,
+        "model_state_dict": save_state,
+        "history": history,
+        "args": vars(args),
     }, ckpt_path)
-    print(f"  Saved: {ckpt_path}")
+    print(f"  Saved best (epoch {best_epoch if best_state else args.epochs}): "
+          f"{ckpt_path}")
+
+    # Load best weights into the live model so eval reflects what we shipped.
+    if best_state is not None:
+        model.load_state_dict(best_state)
 
     if args.eval_games > 0:
         print(f"\n=== Eval ({args.eval_games} games per opponent) ===")

@@ -555,3 +555,114 @@ python3 training/supervised_bootstrap.py \
 ```
 
 ---
+
+## [2026-04-22 15:50] Run Analysis
+
+**Phase:** supervised_bootstrap (multi-player: 2/4/6P)
+**Run:** sup_20260422_091725
+**Config:** CLI args — num-games 6000, epochs 20, batch 256, lr 1e-3, num-players "2,4,6"
+**Device:** cuda
+**Wall clock time:** ~65 min (generation 814s + training 3075s)
+
+**Results:**
+- Iterations completed: 20 / 20 epochs
+- 545,621 experiences from 6000 games (cycled across 2/4/6P)
+- Final train policy loss: 0.2194 (trend: smooth monotonic decrease 1.00 → 0.22)
+- Final val policy loss: 0.6235 (trend: bottomed ~0.549 at epoch 7-8, drifted back up to 0.62 by epoch 20 — mild overfit)
+- Final train/val value loss: 0.00158 / 0.00161 (tight, narrow-range target — same pattern as Phase 0)
+- Final train/val action accuracy: 92.8% / 85.0%
+- Avg game length (2P eval): 300 moves (all draws — unchanged structural issue)
+
+**2P eval scores (5 games, built-in eval uses 2P only):**
+- vs random: **agent 1017** (opp 230) — was 974 in Phase 0 → **+43**
+- vs greedy: **agent 548** (opp 1097) — was 1098 in Phase 0 → **−550 REGRESSION**
+- vs heuristic: **agent 531** (opp 1098) — was 640 in Phase 0 → **−110 regression**
+
+**4P / 6P eval:** NOT MEASURED — `evaluate_agent_quick` at `training/supervised_bootstrap.py:266` only runs 2P matches via `play_match`. Must run `validate_multiplayer.py` separately.
+
+**Reward config used:** N/A (supervised — cross-entropy on teacher action, MSE on teacher's final score / 1300).
+
+**Strengths observed:**
+- Training pipeline extension to multi-player worked end-to-end. No crashes at any player count during generation. 6000 games × up-to-6 seats produced ~2x the Phase 0 experience count.
+- Loss curves clean, smooth decrease. Val loss minimum at epoch 7-8 means the epoch-20 checkpoint is NOT at the sweet spot — a future run should early-stop around epoch 10.
+- Value head target is coherent (narrow positive range, val loss 0.0016 — similar to Phase 0 behaviour).
+
+**Weaknesses observed:**
+- **2P regression vs greedy is severe** (1098 → 548). Shared network capacity split three ways; the 2P-specific heuristic pattern got diluted by 4P/6P teacher moves that differ structurally.
+- Val accuracy 85% (vs Phase 0's 91.5%). Expected — 4/6P boards have ~50+ legal moves and richer opponent interactions; imitating a scalar heuristic across all three is harder than just 2P.
+- Checkpoint saved at epoch 20 (final), not at val-loss minimum (~epoch 8). The script has no early-stopping or best-by-val-loss selection.
+
+**Analysis:**
+
+Two ways to read this run:
+
+1. **Pessimistic:** We traded a working 2P agent (904 avg) for a weaker 2P agent (698 avg) — and we don't yet know if 4P/6P improved at all. If 4P/6P is still broken (1/10 pins, 0/10 pins like Phase 0), this run produced negative value.
+
+2. **Optimistic:** The whole point of this run was 4P/6P coverage. 2P regression was expected (capacity split, teacher distribution mixing). If `validate_multiplayer.py` now shows the agent reaching ≥7/10 pins at 4P and 6P, this is a net win even with the 2P cost — because Phase 0 is useless at 4P/6P.
+
+We **cannot decide between these two readings without the multiplayer validation.** The built-in 2P eval is insufficient. That's the gating measurement.
+
+Per-iter training curves also signal that epoch 8-10 is the better checkpoint than epoch 20. If validation looks promising but marginal, we should redo training with a val-loss-based best-checkpoint selector (one-line change) before declaring this recipe final.
+
+**Comparison to previous runs:**
+
+| Checkpoint | Train data | 2P vs random | 2P vs greedy | 2P vs heur | 4P pins | 6P pins |
+|---|---|---|---|---|---|---|
+| Phase 0 (`sup_20260418_090744`) | 2000g @ 2P | 974 | 1098 | 640 | 1/10 | 0/10 |
+| This run (`sup_20260422_091725`) | 6000g @ 2,4,6P | 1017 | 548 | 531 | **?** | **?** |
+
+**Decision:** Do NOT train more yet. Run `validate_multiplayer.py` against the new checkpoint on the school machine to measure 4P/6P pin counts. Three possible outcomes drive three different next steps:
+
+- **A. 4P ≥ 7 pins AND 6P ≥ 7 pins:** Multi-player bootstrap works. Accept the 2P regression as the price, or retrain with `model_best` selection (val-loss bottom) to recover some of it. This becomes the competition model.
+- **B. 4P and/or 6P still < 3 pins:** Mixed-data hypothesis failed. Train three separate models (one per player count) from the same generator and select per game.
+- **C. Partial improvement (e.g. 4P works, 6P doesn't):** Decide case-by-case — likely train a 6P-specialist on top of this checkpoint, keep this one for 4P, Phase 0 for 2P.
+
+**Recommendation for next run:** Validate first, then decide. The validation command below tests all three player counts (2/4/6) against GreedyProgressAgent baselines at MCTS 20 (the known-good sim count per `mcts_sim_count_pathology` memory).
+
+**Command:**
+```bash
+python3 validate_multiplayer.py \
+  --checkpoint checkpoints/sup_20260422_091725/model_best.pt \
+  --device cuda \
+  --mcts-sims 20 \
+  --players 2 4 6
+```
+
+---
+
+## [2026-04-22 16:30] Multiplayer validation result + next run
+
+**Validation of `sup_20260422_091725` (one game per player count, MCTS 20, greedy baselines):**
+
+| Players | RL pins | RL score | Greedy baseline pins | vs Phase 0 |
+|---|---|---|---|---|
+| 2P | 3/10 | 568 | blue 8/10 | −5 (regression) |
+| 4P | 8/10 | 1097 | blue 7, lawn_green 8, gray0 7 | +7 (fixed) |
+| 6P | 5/10 | 778 | 6-8 across 5 opponents | +5 (partial fix) |
+
+Latency: max 823ms (2P warmup), rest <100ms — comfortably under the 2000ms budget.
+
+**Readout (per decision rule from previous entry):** Case C — partial. Mixed-data bootstrap fixed 4P outright, halved the 6P gap, and regressed 2P. Best per-board checkpoints going into competition:
+
+- 2P → Phase 0 (`sup_20260418_090744/model_best.pt`) — 8/10 pins
+- 4P → mixed run (`sup_20260422_091725/model_best.pt`) — 8/10 pins
+- 6P → mixed run for now; ship a specialist if we can get ≥7/10
+
+**Decision:** Train a **6P specialist**. Same supervised recipe, `--num-players "6"` only. This attacks the single remaining weak link without touching the two already-good checkpoints.
+
+**Code change shipped with this run:** `training/supervised_bootstrap.py` now tracks the best `val_policy_loss` epoch and saves those weights as `model_best.pt`; the epoch-N weights go to `model_final.pt`. Previous runs (both Phase 0 and the mixed run) had val loss bottom near epoch 8 and drift upward afterward — we've been shipping overfit weights. The fix costs ~20 lines and applies to every future supervised run. Eval at end-of-training now runs against the best weights, not the final ones.
+
+**Why 3000 games, 20 epochs:** At 6P the teacher makes ~50 moves per game (vs 150 at 2P), so 3000 games ≈ 150k teacher states — comparable to Phase 0's 277k after accounting for the higher branching factor and harder positions. 20 epochs is a generous ceiling now that best-by-val-loss selection will pick the right stopping point automatically.
+
+**Gate after training:** rerun `validate_multiplayer.py --players 6 --checkpoint <new>/model_best.pt`. Success = ≥7/10 pins at 6P. Failure mode = marginal improvement to 6/10; still ship it as a slight win over 5/10.
+
+**Command:**
+```bash
+python3 training/supervised_bootstrap.py \
+  --num-games 3000 \
+  --epochs 20 \
+  --device cuda \
+  --num-players "6"
+```
+
+---
