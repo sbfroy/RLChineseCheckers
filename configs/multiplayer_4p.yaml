@@ -1,0 +1,58 @@
+# Phase 2: Multi-player fine-tune (4 players) from Phase 0 supervised checkpoint.
+# Resumes from `checkpoints/sup_20260418_090744/model_best.pt` (Phase 0 best, avg 904 in 2P).
+#
+# Rationale:
+#   - Phase 0 was trained on 2-player games only; competition requires 2/4/6 players.
+#   - Phase 1 (2P refinement) plateaued ~50 pts below Phase 0 after 33 GPU hrs.
+#   - Safer to reuse the recipe that worked for Phase 1 v2/v3 (10x lower LR, self-play,
+#     score-margin terminal) but swap the board to 4 players.
+#
+# Gate: if iter 10 eval avg_score < 700, kill the run and ship Phase 0 for 2P only.
+
+model:
+  num_res_blocks: 6
+  trunk_channels: 128
+  policy_channels: 32
+  value_hidden: 128
+
+training:
+  num_iterations: 20
+  num_games_per_iteration: 40
+  num_players: 4
+  batch_size: 128
+  epochs_per_iteration: 5
+  learning_rate: 0.00003
+  weight_decay: 0.0001
+  policy_loss_weight: 1.0
+  value_loss_weight: 1.0
+  buffer_capacity: 200000
+  min_buffer_size: 512
+  temperature: 1.0
+  checkpoint_dir: checkpoints
+  checkpoint_every: 5
+  eval_every: 5
+  device: cuda
+  opponent: self
+
+mcts:
+  num_simulations: 100
+  c_puct: 1.5
+  temperature: 1.0
+
+rewards:
+  win_reward: 1.0
+  loss_reward: -1.0
+  draw_reward: -0.5
+  max_moves_reward: -0.3
+  pin_goal_weight: 0.5
+  distance_weight: 0.05
+  lagging_weight: -0.01
+  home_exit_weight: 0.1
+  mobility_weight: 0.0
+  use_score_terminal: true
+  score_normalization: 1300.0
+  use_score_margin: true
+
+evaluation:
+  num_games: 5
+  num_players: 4

@@ -442,3 +442,68 @@ cp configs/phase1_refine.yaml configs/archive/phase1_refine_20260421.yaml
 ```
 
 ---
+
+## [2026-04-22 10:30] Run Analysis
+
+**Phase:** mcts_full (Phase 1 v3 — extension from v2)
+**Run:** run_20260421_070417
+**Config:** configs/phase1_refine.yaml (num_iterations: 20, lr=3e-5 cosine → 1e-5, opponent: self)
+**Device:** cuda
+**Wall clock time:** ~21h 47min (2026-04-21 07:04 → 2026-04-22 04:52)
+
+**Results:**
+- Iterations completed: 20 / 20 (resumed from v2 best, `run_20260420_181217/model_best.pt`)
+- Final policy loss: 0.6028 (trend: stable ~0.60-0.67 across all 20 iters, no blow-up)
+- Final value loss: 2.2703 (trend: monotonic decrease 2.87 → 2.27 — real learning signal sustained)
+- Avg game length: 300.0 moves (100% hit max, unchanged)
+- Win rates (per-iter 5-game eval, iter 20): vs random 0%, vs greedy 0%, vs heuristic 0% (all draws)
+- Avg scores per-iter 5-game eval: iter 5 → 847.5, iter 10 → 826.5, iter 15 → 840.4, iter 20 → 806.3 (noisy, essentially flat)
+- **Final 10-game eval (iter 20)**: vs random 931, vs greedy 1098, vs heuristic 533 → avg **854.0**
+- Best checkpoint: model_best.pt at iter 10 (score 826.5 on 5-game eval); iter 20 model is slightly below on 5-game but better on the 10-game final eval (854 vs 844 for v2)
+
+**Reward config used:**
+- pin_goal_weight: 0.5, distance_weight: 0.05, lagging_weight: -0.01, home_exit_weight: 0.1
+- use_score_margin: true, opponent: self, MCTS sims: 100, lr: 3e-5 cosine → 1e-5
+
+**Strengths observed:**
+- **Stability held**: no catastrophic forgetting (unlike Phase 1 v1). Policy loss stayed ~0.6 throughout, confirming the v2 recipe generalizes.
+- Value loss continued to decrease (2.87 → 2.27) — there IS still signal, the network is refining positional value estimates.
+- Modest net gain on final 10-game eval: 844 (v2) → 854 (v3), +10 avg score. vs heuristic improved 483 → 533 (+50).
+- vs greedy still saturated at 1098 (maxed out).
+
+**Weaknesses observed:**
+- **Still below Phase 0** (854 vs 904, delta = 50 pts). Two Phase 1 runs / ~33 GPU hours have narrowed the gap only slightly.
+- Per-iter 5-game evals look like a decline (847 → 806). Real signal lost in small-sample noise — 10-game final eval gives the true picture.
+- vs heuristic: Phase 1 v3 = 533 vs Phase 0 = 640. The weak spot got *worse* vs the hardest opponent.
+- Diminishing returns: v2 → v3 gained only +10 avg over 22 hours.
+
+**Analysis:**
+
+Phase 1 v3 did what it was asked: it didn't crash, didn't regress catastrophically, and nudged the score up. But the gradient of improvement is now flat enough that another 20-iter extension would almost certainly land in the 860-870 range — still short of Phase 0's 904. The value head is still learning (loss dropping) but the policy isn't moving meaningfully (loss flat), which is the signature of a model that has settled into a local optimum that MCTS + self-play can't easily escape at this LR.
+
+Meanwhile, **multi-player (4/6) is a hard competition requirement that has not been touched**: Phase 0 trained on 2-player games only (`supervised_bootstrap.py:86` hard-codes `num_players=2`), and all Phase 1 runs have also been 2-player. The competition requires the agent to play 2, 4, AND 6 players. Time invested in squeezing another 10-20 points out of 2-player is time not spent on an untested requirement.
+
+**Comparison to previous runs:**
+| Run | Final avg (10-game) | vs random | vs greedy | vs heuristic | Notes |
+|---|---|---|---|---|---|
+| Phase 0 | 904 | 974 | 1098 | 640 | supervised baseline, 2P |
+| Phase 1 v1 | 367 | 441 | 213 | 447 | collapsed (forgetting) |
+| Phase 1 v2 | 844 | 952 | 1098 | 483 | recovery, 10 iters |
+| Phase 1 v3 (this) | 854 | 931 | 1098 | 533 | +10 over v2, still below Phase 0 |
+
+Phase 0 is still our best 2-player model. Phase 1 is a valuable sanity check (we can train without collapse) but hasn't produced a superior checkpoint.
+
+**Decision:** Stop 2-player refinement. Pivot to multi-player. Fine-tune Phase 0 with 4-player self-play (short 20-iter gated run) using the same conservative recipe that stabilized Phase 1 v2/v3 (lr=3e-5, self-play, score-margin). Phase 0 checkpoint is preserved — if 4-player fine-tune regresses, we ship Phase 0 for 2P and revisit 4/6P with a fresh strategy (e.g., a multi-player supervised bootstrap mirroring Phase 0).
+
+**Recommendation for next run:**
+- New config `configs/multiplayer_4p.yaml` (already created) — copy of phase1_refine with `num_players: 4` (both training and eval), same rewards, same lr schedule, 20 iters.
+- Resume from Phase 0 best checkpoint: `checkpoints/sup_20260418_090744/model_best.pt` (NOT from Phase 1 v3 — Phase 0 is stronger on 2P and we want the strongest prior going into 4P).
+- **Gate:** if iter 10 4-player eval avg < 700, kill the run and declare Phase 0 the 2P competition agent while we plan a separate 4/6P approach.
+- Monitor: value loss should stay above 1.0 (4-player margin variance is larger than 2-player, so expect *more* value signal, not less). Policy loss should not climb above 1.5.
+
+**Command:**
+```bash
+./run_training.sh configs/multiplayer_4p.yaml --phase mcts_full --resume checkpoints/sup_20260418_090744/model_best.pt
+```
+
+---
