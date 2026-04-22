@@ -55,20 +55,31 @@ class EpsilonHeuristicAgent:
 
 
 def generate_games(num_games: int, encoder: BoardEncoder,
-                   score_norm: float = 1300.0, verbose: bool = True) -> dict:
+                   score_norm: float = 1300.0,
+                   num_players_list: list = None,
+                   verbose: bool = True) -> dict:
     """
     Play `num_games` games with HeuristicAgent as the teacher.
 
-    The teacher alternates colours (red vs blue) across games. The opponent
-    is cycled through a pool to diversify states. Only teacher moves are
-    recorded as training examples. Each example is labelled with the
-    teacher's own final competition score at end of game.
+    The teacher alternates which board seat it plays (first vs last of
+    turn_order) across games. The opponent class cycles through a pool
+    for state diversity; every non-teacher seat in the game is filled
+    with a fresh instance of that opponent class. Player count cycles
+    through `num_players_list` (default [2, 4, 6]) so a single run
+    produces data for all board sizes.
+
+    Only teacher moves are recorded as training examples. Each example
+    is labelled with the teacher's own final competition score at end
+    of game.
     """
+    if num_players_list is None:
+        num_players_list = [2]
+
     teacher = HeuristicAgent()
-    opponent_pool = [
-        RandomAgent(),
-        GreedyProgressAgent(),
-        EpsilonHeuristicAgent(epsilon=0.25),
+    opponent_classes = [
+        RandomAgent,
+        GreedyProgressAgent,
+        lambda: EpsilonHeuristicAgent(epsilon=0.25),
     ]
 
     spatial_buf = []
@@ -80,17 +91,20 @@ def generate_games(num_games: int, encoder: BoardEncoder,
     t0 = time.time()
 
     for g in range(num_games):
-        opp = opponent_pool[g % len(opponent_pool)]
-        teacher_is_first = (g // len(opponent_pool)) % 2 == 0
+        opp_cls = opponent_classes[g % len(opponent_classes)]
+        teacher_is_first = (g // len(opponent_classes)) % 2 == 0
+        num_players = num_players_list[g % len(num_players_list)]
 
-        game = LocalGame(num_players=2, max_moves=300)
+        game = LocalGame(num_players=num_players, max_moves=300)
         game.reset()
 
-        colour_a = game.turn_order[0]
-        colour_b = game.turn_order[1]
-        teacher_colour = colour_a if teacher_is_first else colour_b
-        opp_colour = colour_b if teacher_is_first else colour_a
-        agents = {teacher_colour: teacher, opp_colour: opp}
+        teacher_colour = game.turn_order[0] if teacher_is_first else game.turn_order[-1]
+        agents = {}
+        for c in game.turn_order:
+            if c == teacher_colour:
+                agents[c] = teacher
+            else:
+                agents[c] = opp_cls()
 
         indices_this_game = []
 
@@ -288,7 +302,19 @@ def main():
     parser.add_argument("--eval-games", type=int, default=5)
     parser.add_argument("--score-norm", type=float, default=1300.0)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--num-players",
+        type=str,
+        default="2",
+        help="Comma-separated list of player counts to train on (e.g. '2,4,6'). "
+             "Games cycle through the list; use '2,4,6' for multiplayer bootstrap.",
+    )
     args = parser.parse_args()
+
+    num_players_list = [int(x) for x in args.num_players.split(",") if x.strip()]
+    for np_ in num_players_list:
+        if np_ not in (2, 4, 6):
+            parser.error(f"--num-players values must be 2, 4, or 6 (got {np_})")
 
     if args.device == "cpu" and torch.cuda.is_available():
         print(f"  Note: CUDA available ({torch.cuda.get_device_name(0)}); "
@@ -312,12 +338,17 @@ def main():
     print(f"  Run: {args.run_name}")
     print(f"  Games: {args.num_games} | Epochs: {args.epochs} | "
           f"Batch: {args.batch_size} | Device: {args.device}")
+    print(f"  Player counts (cycled across games): {num_players_list}")
 
     encoder = BoardEncoder()
 
     print("\n=== Generating games ===")
     t0 = time.time()
-    data = generate_games(args.num_games, encoder, score_norm=args.score_norm)
+    data = generate_games(
+        args.num_games, encoder,
+        score_norm=args.score_norm,
+        num_players_list=num_players_list,
+    )
     gen_time = time.time() - t0
     print(
         f"Generated {len(data['action']):,} experiences in {gen_time:.1f}s"

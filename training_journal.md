@@ -507,3 +507,51 @@ Phase 0 is still our best 2-player model. Phase 1 is a valuable sanity check (we
 ```
 
 ---
+
+## [2026-04-22 15:00] Multiplayer validation — Phase 0 fails 4P/6P
+
+**Phase:** validation (no training)
+**Script:** validate_multiplayer.py
+**Checkpoint under test:** checkpoints/sup_20260418_090744/model_best.pt (Phase 0)
+**Device:** cuda | MCTS sims: 20 (the good setting — see note below)
+
+**Results (1 game each vs GreedyProgressAgent baselines filling all other seats):**
+
+| Players | RL pins in goal | RL score | Greedy baselines (pins in goal) | RL latency max |
+|---|---|---|---|---|
+| 2P | **8/10** | 1098 | blue=8/10 | 448ms (warmup), p95 74ms |
+| 4P | **1/10** | 303 | blue=1, lawn_green=8, gray0=9 | 75ms |
+| 6P | **0/10** | 195 | 7-8 each across 5 opponents | 87ms |
+
+**Observations:**
+- No crashes at any player count — the LocalGame / encoder / MCTS / ChineseCheckersAgent pipeline is polymorphic in num_players.
+- Inference latency is excellent: max 87ms in 4P/6P, well under the 2000ms competition budget. That's 20x headroom.
+- 2P result exactly matches Phase 0's eval score (1098), which validates both the agent AND the eval methodology for the first time end-to-end.
+- **4P/6P are a total failure.** RL gets 0-1 pins in goal while greedy baselines get 7-9. Phase 0 has zero generalization to boards it never saw.
+- Interesting 4P structural effect: red(RL)=303 AND blue(greedy)=385 both tank, while the diagonal pair (lawn_green=1097, gray0=1199) races through. RL's confused play clogs the N-S corridor shared with its direct-opposite colour, dragging blue down with it. The NE-SW diagonal stays clear.
+
+**Separate diagnostic finding (from `play.py watch` sessions earlier today):**
+- Phase 0 scores **1098 at MCTS 20** but **239 at MCTS 100** (raw visual game, not eval). Value head is near-constant (target range [0.65, 0.85] during training), so high MCTS sim counts over-weight the useless Q-values and degrade play. Eval during training used MCTS 20, which is why it reported correct numbers; Phase 1 self-play used MCTS 100, which explains why Phase 1 never broke past Phase 0. Captured in memory: `mcts_sim_count_pathology.md`.
+- `--mcts-sims 0` is NOT "raw network" — it's uniform random play. `best_action()` uses visit counts, with 0 visits it falls through to uniform distribution. See `search/mcts.py:81-116`.
+
+**Decision:** Multi-player supervised bootstrap is the next run. Repeat the Phase 0 recipe across 2/4/6P in a single training pass. Phase 1 AZ refinement is HALTED; `configs/multiplayer_4p.yaml` (AZ 4P fine-tune) is kept on disk as a fallback but NOT the recommended path — AZ with the current value head is not productive.
+
+**Code changes made for this run:**
+- `training/supervised_bootstrap.py`: `generate_games` now takes `num_players_list` and cycles player counts across games. Opponents filled by constructing a fresh instance for every non-teacher seat. New CLI flag `--num-players "2,4,6"`.
+- `validate_multiplayer.py` (new): one game per player count, RL vs greedy baselines, reports pins/scores/latency and crash status.
+
+**Recommendation for next run:**
+- Run supervised bootstrap with 6000 games split evenly across 2/4/6P, 20 epochs (Phase 0 journal noted val loss plateau around epoch 10-15), cuda, eval at 2P only (default).
+- After training: rerun `validate_multiplayer.py` on the new checkpoint. Success = RL pin counts ≥7/10 at 4P AND 6P, without 2P dropping below 7. Failure (e.g. 2P regresses because mixed data confuses the model) → train three separate models, one per player count.
+- If success, endgame solver becomes the next work item (attacks the 8/10 → 10/10 stall that's still costing ~200 score per 2P game).
+
+**Command:**
+```bash
+python3 training/supervised_bootstrap.py \
+  --num-games 6000 \
+  --epochs 20 \
+  --device cuda \
+  --num-players "2,4,6"
+```
+
+---
