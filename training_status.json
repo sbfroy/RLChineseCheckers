@@ -1,48 +1,13 @@
 {
-  "status": "finished",
-  "phase": "mcts_full",
-  "run_name": "run_20260421_070417",
-  "config_file": "configs/phase1_refine.yaml",
-  "started_at": "2026-04-21T07:04:30.266480",
-  "finished_at": "2026-04-22T04:52:19.937698",
-  "pid": 3443106,
-  "current_iteration": 20,
-  "total_iterations": 20,
-  "latest_metrics": {
-    "policy_loss": 0.6027693271636962,
-    "value_loss": 2.2703386783599853
-  },
-  "latest_eval": {
-    "random": {
-      "win_rate": 0.0,
-      "avg_score": 892.4,
-      "avg_game_length": 300.0,
-      "avg_game_time": 9.62,
-      "wins": 0,
-      "losses": 0,
-      "draws": 5,
-      "num_games": 5
-    },
-    "greedy": {
-      "win_rate": 0.0,
-      "avg_score": 1098.0,
-      "avg_game_length": 300.0,
-      "avg_game_time": 9.3,
-      "wins": 0,
-      "losses": 0,
-      "draws": 5,
-      "num_games": 5
-    },
-    "heuristic": {
-      "win_rate": 0.0,
-      "avg_score": 428.6,
-      "avg_game_length": 300.0,
-      "avg_game_time": 10.31,
-      "wins": 0,
-      "losses": 0,
-      "draws": 5,
-      "num_games": 5
-    },
-    "avg_score": 806.3
-  }
+  "status": "running",
+  "phase": "value_fix",
+  "run_name": "run_20260423_103308",
+  "config_file": "configs/phase1_value_fix.yaml",
+  "started_at": "2026-04-23T10:33:08.190805",
+  "finished_at": null,
+  "pid": 4027943,
+  "current_iteration": 0,
+  "total_iterations": 30,
+  "latest_metrics": null,
+  "latest_eval": null
 }
