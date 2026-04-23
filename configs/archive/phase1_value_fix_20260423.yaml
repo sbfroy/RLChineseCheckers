@@ -1,8 +1,7 @@
 # Phase 1a: Fix the value head.
 # Resumes from Phase 0 supervised checkpoint with policy FROZEN.
-# Plays against a MIXED opponent pool (random, greedy, heuristic) so
-# the value head sees a wide range of outcomes (~640-1100 score),
-# not the near-constant [0.7-0.85] from self-play.
+# Self-play at MCTS 20 generates varied game outcomes; only the value
+# head trains on discounted returns. Zero risk to the working policy.
 #
 # Gate: eval at MCTS 50 should score HIGHER than Phase 0 at MCTS 20.
 # If the value head is working, more search = better play.
@@ -31,7 +30,6 @@ training:
   eval_every: 5
   device: cuda
   freeze_policy: true
-  opponent: mixed
 
 mcts:
   num_simulations: 20

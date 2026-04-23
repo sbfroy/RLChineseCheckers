@@ -788,3 +788,69 @@ python3 env/server_adapter.py \
 ```
 
 ---
+
+## [2026-04-23 14:30] Run Analysis
+
+**Phase:** value_fix (Phase 1a — fix value head with frozen policy)
+**Run:** run_20260423_103308
+**Config:** configs/phase1_value_fix.yaml
+**Device:** cuda
+**Wall clock time:** ~4 hours (started 2026-04-23 10:33, still "running" per status — but no output)
+
+**Results:**
+- Iterations completed: 0 / 30
+- No metrics.jsonl, no eval.jsonl, no console.log produced
+- training_status.json shows pid 4027943, iteration 0, no metrics
+- Run either crashed immediately after writing metadata, stalled, or was never actually started (metadata synced from a partial launch)
+
+**Reward config used:**
+- pin_goal_weight: 0.3, distance_weight: 0.01, lagging_weight: -0.005, home_exit_weight: 0.05
+- use_score_terminal: true, use_score_margin: false, opponent: none (self-play)
+- freeze_policy: true, MCTS sims: 20, lr: 3e-4
+
+**Strengths observed:** None — no data produced.
+
+**Weaknesses observed:** Even if the run had produced data, the design has a fatal flaw:
+
+**DESIGN FLAW: self-play + absolute score terminal + frozen policy = near-constant value targets.**
+
+Both players use the same frozen Phase 0 policy. Both score ~900-1100 in every game. Terminal value = `score / 1300` ≈ 0.7-0.85 for every game — the exact narrow range (std ≈ 0.051) that IS the MCTS sim count pathology. The value head would learn "all positions are worth ~0.75" — a near-constant — which is what it already does. This run cannot fix the problem it was designed to solve.
+
+**Analysis:**
+
+The value_fix concept is sound: freeze the policy (zero forgetting risk), train only the value head until it provides real positional discrimination, then unlock the policy with a working Q-signal. The flaw is in the opponent choice.
+
+To learn value discrimination, the value head needs to see positions with **diverse outcomes** — some leading to 400 points, others to 1100. Self-play with a frozen good policy produces uniformly good outcomes for both sides, offering no contrast.
+
+**Fix applied:** Added `opponent: mixed` support to the training pipeline. With frozen policy playing against a pool of {RandomAgent, GreedyProgressAgent, HeuristicAgent} sampled per iteration:
+- vs random: agent scores ~974 → G ≈ 0.75
+- vs greedy: agent scores ~1098 → G ≈ 0.84
+- vs heuristic: agent scores ~640 → G ≈ 0.49
+
+Value target range expands from [0.70, 0.85] (self-play) → [0.49, 0.84] (mixed). More importantly, positions reached when losing to heuristic look structurally different from positions when beating random — the value head can learn "blocked positions are bad, open paths are good."
+
+**Code changes:**
+- `train.py`: `opponent: mixed` creates `[RandomAgent(), GreedyProgressAgent(), HeuristicAgent()]`
+- `training/trainer.py`: stores opponent pool, randomly samples one per iteration
+- `configs/phase1_value_fix.yaml`: set `opponent: mixed`, updated header comment
+- Config archived: `configs/archive/phase1_value_fix_20260423.yaml`
+- All 49 tests pass
+
+**Decision:** Kill the current stalled run (if still running). Relaunch value_fix with mixed opponents from Phase 0 checkpoint.
+
+**Gate:** After 30 iterations, test at MCTS 50 and MCTS 100. If MCTS 50 scores **higher** than MCTS 20 (currently 1098), the value head fix worked — higher search depth helps instead of hurts. If MCTS 50 still scores ≤ MCTS 20, the value head is still near-constant; accept Phase 0 as-is and move to competition prep.
+
+**Recommendation for next run:**
+- Kill pid 4027943 on school machine if still alive: `kill 4027943`
+- Resume from Phase 0 best checkpoint (confirmed working, 1098 at MCTS 20)
+- 30 iterations × 60 games × mixed opponents → ~600 games per opponent type
+- Monitor: value_loss should stay above 0.01 (not collapse to ~0.003 like all previous runs). If value_loss is sustained >0.05 at iter 10, that's strong evidence of real learning.
+
+**Command:**
+```bash
+./run_training.sh configs/phase1_value_fix.yaml \
+  --phase value_fix \
+  --resume checkpoints/sup_20260418_090744/model_best.pt
+```
+
+---

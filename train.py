@@ -195,12 +195,16 @@ def main():
             "greedy": GreedyProgressAgent,
             "random": RandomAgent,
         }
-        opp_cls = opp_map.get(opp_name)
-        if opp_cls:
-            opponent = opp_cls()
-            print(f"  Opponent: {opp_name} ({opp_cls.__name__})")
+        if opp_name == "mixed":
+            opponent = [RandomAgent(), GreedyProgressAgent(), HeuristicAgent()]
+            print(f"  Opponent: mixed pool ({len(opponent)} agents, sampled per iteration)")
         else:
-            print(f"  WARNING: Unknown opponent '{opp_name}', using self-play")
+            opp_cls = opp_map.get(opp_name)
+            if opp_cls:
+                opponent = opp_cls()
+                print(f"  Opponent: {opp_name} ({opp_cls.__name__})")
+            else:
+                print(f"  WARNING: Unknown opponent '{opp_name}', using self-play")
 
     # Build trainer
     trainer = Trainer(

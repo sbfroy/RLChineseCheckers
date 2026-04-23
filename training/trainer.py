@@ -14,7 +14,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from typing import Dict, Optional
+import random as random_module
+from typing import Dict, List, Optional, Union
 from dataclasses import dataclass
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -86,7 +87,12 @@ class Trainer:
         self.config = config or TrainingConfig()
         self.reward_config = reward_config or RewardConfig()
         self.mcts = mcts
-        self.opponent = opponent
+        if isinstance(opponent, list):
+            self.opponent_pool = opponent
+            self.opponent = opponent[0]
+        else:
+            self.opponent_pool = None
+            self.opponent = opponent
         self.encoder = BoardEncoder()
         self.buffer = ReplayBuffer(capacity=self.config.buffer_capacity)
 
@@ -161,7 +167,11 @@ class Trainer:
             "model_params": sum(p.numel() for p in self.model.parameters()),
             "mcts_enabled": self.mcts is not None,
             "mcts_simulations": self.config.mcts_simulations,
-            "opponent": type(self.opponent).__name__ if self.opponent else None,
+            "opponent": (
+                [type(o).__name__ for o in self.opponent_pool]
+                if self.opponent_pool
+                else (type(self.opponent).__name__ if self.opponent else None)
+            ),
         }
         path = os.path.join(self.log_dir, "run_metadata.json")
         with open(path, "w") as f:
@@ -243,6 +253,8 @@ class Trainer:
 
             # 1. Self-play (or vs opponent)
             self.model.eval()
+            if self.opponent_pool:
+                self.opponent = random_module.choice(self.opponent_pool)
             experiences, game_stats = generate_self_play_data(
                 model=self.model,
                 encoder=self.encoder,
