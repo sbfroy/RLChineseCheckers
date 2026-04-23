@@ -19,10 +19,11 @@ import argparse
 import os
 import sys
 import time
+from collections import deque
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from env.local_game import LocalGame, COLOUR_OPPOSITES
+from env.local_game import LocalGame, COLOUR_OPPOSITES, axial_dist
 from agents.chinese_checkers_agent import ChineseCheckersAgent
 from agents.random_agent import RandomAgent
 from agents.heuristic_agent import GreedyProgressAgent, HeuristicAgent
@@ -32,6 +33,71 @@ COLOUR_SHORT = {
     'red': 'R', 'blue': 'B', 'lawn green': 'G',
     'gray0': 'A', 'yellow': 'Y', 'purple': 'P',
 }
+
+
+class AntiOscillationWrapper:
+    """Wraps an agent with repetition detection + goal-distance heuristic fallback."""
+
+    def __init__(self, agent):
+        self.agent = agent
+        self._recent: deque = deque(maxlen=8)
+        self.last_was_heuristic = False
+
+    def select_action(self, game, colour):
+        pin_id, to_idx = self.agent.select_action(game, colour)
+
+        if (pin_id, to_idx) in self._recent:
+            pin_id, to_idx = self._heuristic(game, colour)
+            self.last_was_heuristic = True
+        else:
+            self.last_was_heuristic = False
+
+        self._recent.append((pin_id, to_idx))
+        return pin_id, to_idx
+
+    def _heuristic(self, game, colour):
+        opposite = COLOUR_OPPOSITES[colour]
+        goal_indices = game.board.axial_of_colour(opposite)
+        goal_cells = [game.board.cells[g] for g in goal_indices]
+
+        occupied = set()
+        for pins in game.pins_by_colour.values():
+            for p in pins:
+                occupied.add(p.axialindex)
+        empty_goals = [g for g in goal_indices if g not in occupied]
+
+        if not empty_goals:
+            legal = game.get_legal_moves(colour)
+            for pid, dests in legal.items():
+                for d in dests:
+                    if (pid, d) not in self._recent:
+                        return (pid, d)
+            for pid, dests in legal.items():
+                if dests:
+                    return (pid, dests[0])
+
+        empty_goal_cells = [game.board.cells[g] for g in empty_goals]
+        legal = game.get_legal_moves(colour)
+        best_move = None
+        best_gain = -999
+
+        for pid, dests in legal.items():
+            cur_cell = game.board.cells[game.pins_by_colour[colour][pid].axialindex]
+            cur_dist = min(axial_dist(cur_cell, gc) for gc in empty_goal_cells)
+            for d in dests:
+                if (pid, d) in self._recent:
+                    continue
+                dest_dist = min(axial_dist(game.board.cells[d], gc) for gc in empty_goal_cells)
+                gain = cur_dist - dest_dist
+                if gain > best_gain:
+                    best_gain = gain
+                    best_move = (pid, d)
+
+        if best_move is None:
+            for pid, dests in legal.items():
+                if dests:
+                    return (pid, dests[0])
+        return best_move
 
 
 def render_board(game, highlight_move=None):
@@ -111,6 +177,12 @@ def watch_game(agent_a, agent_b, name_a="Agent", name_b="Baseline",
     game = LocalGame(num_players=num_players, max_moves=max_moves)
     game.reset()
 
+    # Wrap RL agents with anti-oscillation
+    if isinstance(agent_a, ChineseCheckersAgent):
+        agent_a = AntiOscillationWrapper(agent_a)
+    if isinstance(agent_b, ChineseCheckersAgent):
+        agent_b = AntiOscillationWrapper(agent_b)
+
     agents = {game.colours[0]: (agent_a, name_a), game.colours[1]: (agent_b, name_b)}
     print_state(game)
 
@@ -118,23 +190,20 @@ def watch_game(agent_a, agent_b, name_a="Agent", name_b="Baseline",
         colour = game.current_colour()
         agent, name = agents[colour]
 
-        # Get move
         start = time.time()
-        if hasattr(agent, 'select_action'):
-            pin_id, to_idx = agent.select_action(game, colour)
-        else:
-            # RandomAgent / heuristic
-            actions = game.get_all_legal_actions(colour)
-            pin_id, to_idx = agent.select_action(game, colour)
-
+        pin_id, to_idx = agent.select_action(game, colour)
         elapsed = time.time() - start
+
+        tag = ""
+        if isinstance(agent, AntiOscillationWrapper) and agent.last_was_heuristic:
+            tag = " [HEURISTIC]"
 
         from_idx = game.pins_by_colour[colour][pin_id].axialindex
         state, done, info = game.step(pin_id, to_idx)
 
         move_str = (
             f"{name} ({COLOUR_SHORT[colour]}): "
-            f"pin {pin_id} cell {from_idx}->{to_idx} ({elapsed:.2f}s)"
+            f"pin {pin_id} cell {from_idx}->{to_idx}{tag} ({elapsed:.2f}s)"
         )
         print_state(game, last_move_to=to_idx, move_info=move_str)
 
@@ -158,6 +227,9 @@ def interactive_game(agent, agent_name="Agent", num_players=2, max_moves=300):
     """Play interactively against the agent."""
     game = LocalGame(num_players=num_players, max_moves=max_moves)
     game.reset()
+
+    if isinstance(agent, ChineseCheckersAgent):
+        agent = AntiOscillationWrapper(agent)
 
     human_colour = game.colours[0]
     agent_colour = game.colours[1]
@@ -215,9 +287,13 @@ def interactive_game(agent, agent_name="Agent", num_players=2, max_moves=300):
             pin_id, to_idx = agent.select_action(game, colour)
             elapsed = time.time() - start
 
+            tag = ""
+            if isinstance(agent, AntiOscillationWrapper) and agent.last_was_heuristic:
+                tag = " [HEURISTIC]"
+
             from_idx = game.pins_by_colour[colour][pin_id].axialindex
             state, done, info = game.step(pin_id, to_idx)
-            move_str = f"{agent_name} ({COLOUR_SHORT[colour]}): pin {pin_id} {from_idx}->{to_idx} ({elapsed:.2f}s)"
+            move_str = f"{agent_name} ({COLOUR_SHORT[colour]}): pin {pin_id} {from_idx}->{to_idx}{tag} ({elapsed:.2f}s)"
 
         print_state(game, last_move_to=to_idx, move_info=move_str)
 
