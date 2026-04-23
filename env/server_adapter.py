@@ -54,23 +54,41 @@ class CompetitionPlayer:
         self,
         player_name: str = "RLAgent",
         checkpoint_path: Optional[str] = None,
-        mcts_simulations: int = 100,
+        checkpoints_by_players: Optional[Dict[int, str]] = None,
+        mcts_simulations: int = 20,
         time_limit: Optional[float] = None,
         device: str = "cpu",
     ):
         self.player_name = player_name
-        self.agent = ChineseCheckersAgent(
-            checkpoint_path=checkpoint_path,
-            mcts_simulations=mcts_simulations,
-            time_limit=time_limit,
-            device=device,
-        )
+        self.checkpoint_path = checkpoint_path
+        self.checkpoints_by_players = checkpoints_by_players or {}
+        self.mcts_simulations = mcts_simulations
+        self.time_limit = time_limit
+        self.device = device
+        self.agent: Optional[ChineseCheckersAgent] = None
 
         self.game_id = None
         self.player_id = None
         self.colour = None
         self.my_move_count = 0
         self.total_time = 0.0
+
+    def _select_checkpoint(self, num_players: int) -> Optional[str]:
+        if num_players in self.checkpoints_by_players:
+            return self.checkpoints_by_players[num_players]
+        return self.checkpoint_path
+
+    def _ensure_agent(self, num_players: int):
+        if self.agent is not None:
+            return
+        ckpt = self._select_checkpoint(num_players)
+        print(f"Loading agent for {num_players}P: checkpoint={ckpt}, mcts_sims={self.mcts_simulations}")
+        self.agent = ChineseCheckersAgent(
+            checkpoint_path=ckpt,
+            mcts_simulations=self.mcts_simulations,
+            time_limit=self.time_limit,
+            device=self.device,
+        )
 
     def run(self):
         """Main game loop for competition play."""
@@ -150,6 +168,9 @@ class CompetitionPlayer:
                 time.sleep(0.3)
                 continue
 
+            turn_order = state.get("turn_order", [])
+            self._ensure_agent(num_players=len(turn_order))
+
             # Select action using trained agent
             pin_id, to_index = self.agent.select_action_from_server_state(
                 pin_positions=state.get("pins", {}),
@@ -207,15 +228,33 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--name", default="RLAgent")
-    parser.add_argument("--checkpoint", default=None)
-    parser.add_argument("--mcts-sims", type=int, default=100)
+    parser.add_argument(
+        "--checkpoint",
+        default=None,
+        help="Fallback checkpoint used when no per-player checkpoint is set for the detected player count.",
+    )
+    parser.add_argument("--checkpoint-2p", default=None, help="Checkpoint to use when the joined game has 2 players.")
+    parser.add_argument("--checkpoint-4p", default=None, help="Checkpoint to use when the joined game has 4 players.")
+    parser.add_argument("--checkpoint-6p", default=None, help="Checkpoint to use when the joined game has 6 players.")
+    parser.add_argument("--mcts-sims", type=int, default=20, help="MCTS simulations per move. 20 is the validated setting.")
     parser.add_argument("--time-limit", type=float, default=None)
+    parser.add_argument("--device", default="cpu")
     args = parser.parse_args()
+
+    ckpts_by_players: Dict[int, str] = {}
+    if args.checkpoint_2p:
+        ckpts_by_players[2] = args.checkpoint_2p
+    if args.checkpoint_4p:
+        ckpts_by_players[4] = args.checkpoint_4p
+    if args.checkpoint_6p:
+        ckpts_by_players[6] = args.checkpoint_6p
 
     player = CompetitionPlayer(
         player_name=args.name,
         checkpoint_path=args.checkpoint,
+        checkpoints_by_players=ckpts_by_players,
         mcts_simulations=args.mcts_sims,
         time_limit=args.time_limit,
+        device=args.device,
     )
     player.run()

@@ -666,3 +666,125 @@ python3 training/supervised_bootstrap.py \
 ```
 
 ---
+
+## [2026-04-23 10:15] Run Analysis
+
+**Phase:** supervised_bootstrap (6P specialist)
+**Run:** sup_20260422_135523
+**Config:** CLI args — num-games 3000, epochs 20, batch 256, lr 1e-3, num-players "6"
+**Device:** cuda
+**Wall clock time:** ~20 min (generation 374s + training 813s)
+
+**Results:**
+- Iterations completed: 20 / 20 epochs
+- 143,323 experiences from 3000 games (6P only)
+- Final train policy loss: 0.1334 (trend: smooth monotonic decrease 1.78 → 0.13, action accuracy 95.6%)
+- Final val policy loss: 2.4218 (trend: **bottomed at 1.347 at epoch 3**, then climbed monotonically — severe overfitting after epoch 3)
+- Final train/val value loss: 0.00359 / 0.00349 (narrow-range target, same pattern as all supervised runs)
+- Final val action accuracy: 63.2% (peak 63.9% at epoch 6)
+- Best checkpoint: `model_best.pt` = epoch 3 weights (val_policy_loss 1.347), per new best-by-val-loss selector shipped with previous run
+- Avg game length (2P eval): 300.0 moves (all draws — expected, 6P-only training)
+
+**2P eval scores (5 games, built-in — not the relevant metric for a 6P specialist):**
+- vs random: agent 558 (opp 258) — Phase 0: 974, mixed: 1017
+- vs greedy: agent 285 (opp 1077) — Phase 0: 1098, mixed: 548
+- vs heuristic: agent 390 (opp 1036) — Phase 0: 640, mixed: 531
+
+**4P / 6P eval:** NOT MEASURED. The built-in eval only runs 2P matches; the gating measurement for this run is `validate_multiplayer.py --players 6`, not yet run.
+
+**Reward config used:** N/A (supervised — cross-entropy on teacher action, MSE on teacher's final score / 1300).
+
+**Strengths observed:**
+- Pipeline ran cleanly: 3000 6P games generated and trained without incident.
+- Best-by-val-loss selector (shipped previous run) worked — `model_best.pt` is the epoch-3 weights (val loss 1.35) rather than the drifted epoch-20 weights (val loss 2.42). Without that change we'd be evaluating a substantially worse model.
+- Value head behaviour matches Phase 0 / mixed (narrow, near-constant positive target).
+
+**Weaknesses observed:**
+- **Val policy loss floor much higher than any prior run** (1.35 vs Phase 0's 0.33, mixed's 0.55). Likely cause: 6P games have ~50-60 legal moves per state, so the teacher's chosen action is a lower-probability event under cross-entropy (branching factor dominates the loss floor).
+- Overfitting starts immediately — val loss bottoms at epoch 3 and climbs every epoch after. Signals that 143k experiences is thin for the 6P distribution, or that 20 epochs is far too many at this data volume.
+- 2P regression as expected (2P data not in training set), confirming a single-network 6P-only specialist cannot substitute for Phase 0 on 2P boards.
+
+**Analysis:**
+
+The run did exactly what was asked. The interesting signal is the val loss floor of 1.35 — it tells us the 6P imitation problem is genuinely harder than 2P, not just "needs more of the same". Even at capacity this model is only hitting 64% val action accuracy; compare mixed's 85% and Phase 0's 91.5%. That ceiling is the real question mark going into 6P validation.
+
+**We cannot make a next-step decision until `validate_multiplayer.py --players 6` runs.** The gate from the previous entry is still in force: success = ≥7/10 pins at 6P. The built-in 2P eval is not informative here — it measures a board this model wasn't trained on.
+
+Per-board shipping plan remains:
+- 2P → Phase 0 (`sup_20260418_090744`) — 8/10 pins, validated
+- 4P → mixed (`sup_20260422_091725`) — 8/10 pins, validated
+- 6P → this run if ≥7 pins; mixed (5/10) as fallback
+
+**Comparison to previous runs:**
+
+| Run | Train data | Val policy loss min | Val action acc | 6P pins |
+|---|---|---|---|---|
+| Phase 0 | 2000g @ 2P | 0.33 @ ep 3 | 91.5% | 0/10 |
+| Mixed | 6000g @ 2,4,6P | 0.55 @ ep 8 | 85.0% | 5/10 |
+| This run | 3000g @ 6P | 1.35 @ ep 3 | 63.2% | **?** |
+
+**Decision:** Do NOT train more yet. Run `validate_multiplayer.py --players 6` against the new checkpoint on the school machine. Three branches:
+
+- **A. 6P ≥ 7 pins:** Ship per-board (Phase 0 for 2P, mixed for 4P, this for 6P). Declare training done; move to competition prep (timing verification, server integration, endgame solver for the 8/10 → 10/10 stall).
+- **B. 6P = 6 pins:** Marginal win over mixed's 5/10 — ship it for 6P. Same next-step as A.
+- **C. 6P ≤ 5 pins:** Specialist failed. Options then are (1) more 6P data (say 10k games, keep 20-epoch ceiling since best-by-val-loss will auto-stop around epoch 3-5), or (2) accept mixed's 5/10 for 6P and stop. Default to (2) given diminishing returns.
+
+**Recommendation for next run:** Validate first. The command below tests 6P only against GreedyProgressAgent baselines at MCTS 20 (the known-good sim count per `mcts_sim_count_pathology` memory). 2P and 4P are not retested because this model wasn't trained for them — Phase 0 and mixed respectively remain the per-board picks for those.
+
+**Command:**
+```bash
+python3 validate_multiplayer.py \
+  --checkpoint checkpoints/sup_20260422_135523/model_best.pt \
+  --device cuda \
+  --mcts-sims 20 \
+  --players 6
+```
+
+---
+
+## [2026-04-23 10:30] Validation result — 6P specialist clears the gate
+
+**Validation of `sup_20260422_135523/model_best.pt` (one 6P game, MCTS 20, greedy baselines):**
+
+| Players | RL pins | RL score | Greedy baselines | vs prior checkpoints |
+|---|---|---|---|---|
+| 6P | **7/10** | 995.0 | 7, 8, 8, 8, 9 (5 greedy opp) | Phase 0: 0/10 → mixed: 5/10 → **specialist: 7/10** |
+
+Latency: max 803ms (warmup), avg 80.3ms, p95 75.6ms — comfortably under the 2000ms competition budget.
+
+**Readout:** Case A from the decision rule. 6P gate (≥7 pins) met exactly. The per-board shipping map is now fully validated:
+
+| Board | Checkpoint | Pins | Score |
+|---|---|---|---|
+| 2P | `sup_20260418_090744/model_best.pt` (Phase 0) | 8/10 | 1098 |
+| 4P | `sup_20260422_091725/model_best.pt` (mixed 2/4/6P) | 8/10 | 1097 |
+| 6P | `sup_20260422_135523/model_best.pt` (6P specialist) | 7/10 | 995 |
+
+**Decision:** Training is done. Pivot to competition integration. Two things shipping depends on and the current adapter gets wrong:
+
+1. **Single-checkpoint dispatch** — `env/server_adapter.py` currently takes one `--checkpoint`. A competition submission must dispatch by player count.
+2. **MCTS-sims default of 100** — per `mcts_sim_count_pathology`, Phase 0 scores 1098 at MCTS 20 but 239 at MCTS 100. Shipping with the default would actively destroy the 2P case.
+
+**Code change shipped with this entry (`env/server_adapter.py`):**
+- `CompetitionPlayer.__init__` now takes `checkpoints_by_players: Dict[int, str]` in addition to the single-checkpoint fallback.
+- Agent construction is deferred to the first turn, at which point `turn_order` length determines the checkpoint loaded (one-time cost absorbed in the 10s turn budget).
+- Default `--mcts-sims` dropped from 100 → **20** (the validated setting across all three checkpoints).
+- New CLI flags: `--checkpoint-2p`, `--checkpoint-4p`, `--checkpoint-6p`, `--device`. Old `--checkpoint` still works as fallback.
+
+**Recommendation for next run:** Smoke-test the modified adapter against the local game server. One window: start `game.py`. Other window: launch the adapter with all three checkpoints. Confirms (a) the adapter connects and plays cleanly end-to-end, (b) the right checkpoint gets loaded for the detected player count, and (c) per-move latency on the real RPC path stays under 2s.
+
+If smoke passes, remaining work before competition is: (1) endgame solver to attack the 8/10 → 10/10 stall (~+200 score per 2P/4P game), (2) whatever final submission packaging the class requires.
+
+**Command** (run from school machine; `game.py` from `multi system single machine minimal/` must already be running on 127.0.0.1:50555):
+
+```bash
+python3 env/server_adapter.py \
+  --name RLAgent \
+  --checkpoint-2p checkpoints/sup_20260418_090744/model_best.pt \
+  --checkpoint-4p checkpoints/sup_20260422_091725/model_best.pt \
+  --checkpoint-6p checkpoints/sup_20260422_135523/model_best.pt \
+  --mcts-sims 20 \
+  --device cuda
+```
+
+---
