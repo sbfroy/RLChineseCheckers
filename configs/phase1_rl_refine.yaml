@@ -1,0 +1,57 @@
+# Phase 1b: Full RL refinement with KL anchoring.
+# Resumes from Phase 1a (value-fixed) checkpoint. Both heads train.
+# KL divergence penalty anchors policy to Phase 0 prior, preventing
+# the catastrophic forgetting that killed the first Phase 1 attempt.
+#
+# MCTS 50 is now useful because the value head provides real signal.
+# Self-play generates diverse data; absolute score terminal (not margin).
+#
+# Gate: eval score at MCTS 50 must exceed Phase 0 at MCTS 20 (1098).
+
+model:
+  num_res_blocks: 6
+  trunk_channels: 128
+  policy_channels: 32
+  value_hidden: 128
+
+training:
+  num_iterations: 50
+  num_games_per_iteration: 40
+  num_players: 2
+  batch_size: 128
+  epochs_per_iteration: 5
+  learning_rate: 0.00005
+  weight_decay: 0.0001
+  policy_loss_weight: 1.0
+  value_loss_weight: 1.0
+  buffer_capacity: 200000
+  min_buffer_size: 512
+  temperature: 1.0
+  checkpoint_dir: checkpoints
+  checkpoint_every: 5
+  eval_every: 5
+  device: cuda
+  kl_anchor_weight: 0.5
+
+mcts:
+  num_simulations: 50
+  c_puct: 1.5
+  temperature: 1.0
+
+rewards:
+  win_reward: 1.0
+  loss_reward: -1.0
+  draw_reward: -0.5
+  max_moves_reward: -0.3
+  pin_goal_weight: 0.3
+  distance_weight: 0.01
+  lagging_weight: -0.005
+  home_exit_weight: 0.05
+  mobility_weight: 0.001
+  use_score_terminal: true
+  score_normalization: 1300.0
+  use_score_margin: false
+
+evaluation:
+  num_games: 10
+  num_players: 2

@@ -66,6 +66,8 @@ def build_training_config(cfg: dict, args) -> TrainingConfig:
         eval_every=tc.get("eval_every", 20),
         device=args.device or tc.get("device", "cpu"),
         mcts_simulations=args.mcts_sims if args.mcts_sims is not None else mc.get("num_simulations", 100),
+        freeze_policy=args.freeze_policy if hasattr(args, 'freeze_policy') else tc.get("freeze_policy", False),
+        kl_anchor_weight=args.kl_weight if (hasattr(args, 'kl_weight') and args.kl_weight is not None) else tc.get("kl_anchor_weight", 0.0),
     )
 
 
@@ -131,8 +133,14 @@ def main():
     parser.add_argument("--device", type=str, default=None,
                        help="Device: cpu or cuda (auto-detects if not set)")
     parser.add_argument("--no-eval", action="store_true")
+    parser.add_argument("--freeze-policy", action="store_true",
+                       help="Freeze policy head, train only value head")
+    parser.add_argument("--kl-anchor", type=str, default=None,
+                       help="Checkpoint path for frozen KL anchor model (prevents policy drift)")
+    parser.add_argument("--kl-weight", type=float, default=None,
+                       help="KL divergence anchor weight (overrides config)")
     parser.add_argument("--phase", type=str, default="unknown",
-                       choices=["bootstrap", "mcts_light", "mcts_full", "unknown"],
+                       choices=["bootstrap", "mcts_light", "mcts_full", "value_fix", "rl_refine", "unknown"],
                        help="Training phase name (for autonomous tracking)")
     args = parser.parse_args()
 
@@ -170,6 +178,14 @@ def main():
         checkpoint = Trainer.load_checkpoint(args.resume, model)
         print(f"Resumed from iteration {checkpoint['iteration']}")
 
+    # Load KL anchor model (frozen copy of prior policy)
+    anchor_model = None
+    if args.kl_anchor:
+        anchor_model = build_model(cfg)
+        anchor_ckpt = torch.load(args.kl_anchor, map_location="cpu", weights_only=False)
+        anchor_model.load_state_dict(anchor_ckpt["model_state_dict"])
+        print(f"  KL anchor loaded: {args.kl_anchor} (weight={train_cfg.kl_anchor_weight})")
+
     # Build opponent if configured
     opponent = None
     opp_name = cfg.get("training", {}).get("opponent")
@@ -193,6 +209,7 @@ def main():
         reward_config=reward_cfg,
         mcts=mcts,
         opponent=opponent,
+        anchor_model=anchor_model,
     )
 
     # Set phase and config info for status tracking

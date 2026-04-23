@@ -57,6 +57,10 @@ class TrainingConfig:
     # Device
     device: str = "cpu"
 
+    # Phase control
+    freeze_policy: bool = False
+    kl_anchor_weight: float = 0.0
+
 
 class Trainer:
     """
@@ -76,6 +80,7 @@ class Trainer:
         reward_config: Optional[RewardConfig] = None,
         mcts=None,
         opponent=None,
+        anchor_model: Optional[PolicyValueNet] = None,
     ):
         self.model = model
         self.config = config or TrainingConfig()
@@ -85,11 +90,28 @@ class Trainer:
         self.encoder = BoardEncoder()
         self.buffer = ReplayBuffer(capacity=self.config.buffer_capacity)
 
+        # Frozen prior for KL anchoring (prevents catastrophic forgetting)
+        self.anchor_model = anchor_model
+        if self.anchor_model is not None:
+            self.anchor_model.to(self.config.device)
+            self.anchor_model.eval()
+            for p in self.anchor_model.parameters():
+                p.requires_grad = False
+
         # Move model to device
         self.model.to(self.config.device)
 
+        # Freeze policy head if configured (value-only training)
+        if self.config.freeze_policy:
+            for name, p in model.named_parameters():
+                if 'value' not in name:
+                    p.requires_grad = False
+            trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
+            total = sum(p.numel() for p in model.parameters())
+            print(f"  Policy FROZEN: training {trainable:,}/{total:,} params (value head only)")
+
         self.optimizer = optim.Adam(
-            model.parameters(),
+            filter(lambda p: p.requires_grad, model.parameters()),
             lr=self.config.learning_rate,
             weight_decay=self.config.weight_decay,
         )
@@ -345,6 +367,14 @@ class Trainer:
             # Total loss
             loss = (cfg.policy_loss_weight * policy_loss +
                     cfg.value_loss_weight * value_loss)
+
+            # KL divergence anchor: penalize drift from frozen prior policy
+            if self.anchor_model is not None and cfg.kl_anchor_weight > 0:
+                with torch.no_grad():
+                    anchor_logits, _ = self.anchor_model(spatial, scalars, masks)
+                anchor_log_probs = F.log_softmax(anchor_logits, dim=-1)
+                kl_div = F.kl_div(log_probs, anchor_log_probs.exp(), reduction='batchmean')
+                loss = loss + cfg.kl_anchor_weight * kl_div
 
             # Backward
             self.optimizer.zero_grad()

@@ -1,5 +1,9 @@
 # Repo notes for Claude
 
+## Competition date
+
+**2026-05-22** — IKT 460 Chinese Checkers competition. All training, testing, and integration must be done by then.
+
 ## Training environment split
 
 Training runs on UiA school computers (CUDA). The local repo only receives **logs**, not checkpoints.
