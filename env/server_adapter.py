@@ -11,10 +11,16 @@ import sys
 import json
 import socket
 import time
-from typing import Dict, Any, Optional, Tuple
+from collections import deque
+from typing import Dict, Any, List, Optional, Tuple
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+_ENGINE_DIR = os.path.join(os.path.dirname(__file__), "..", "multi system single machine minimal")
+if _ENGINE_DIR not in sys.path:
+    sys.path.insert(0, _ENGINE_DIR)
+
+from checkers_board import HexBoard
 from agents.chinese_checkers_agent import ChineseCheckersAgent
 
 HOST = "127.0.0.1"
@@ -72,6 +78,8 @@ class CompetitionPlayer:
         self.colour = None
         self.my_move_count = 0
         self.total_time = 0.0
+        self._recent_moves: deque = deque(maxlen=8)
+        self._board = HexBoard()
 
     def _select_checkpoint(self, num_players: int) -> Optional[str]:
         if num_players in self.checkpoints_by_players:
@@ -89,6 +97,66 @@ class CompetitionPlayer:
             time_limit=self.time_limit,
             device=self.device,
         )
+
+    def _is_repeating(self, pin_id: int, to_index: int) -> bool:
+        return (pin_id, to_index) in self._recent_moves
+
+    @staticmethod
+    def _hex_dist(a, b) -> int:
+        dq = abs(a.q - b.q)
+        dr = abs(a.r - b.r)
+        ds = abs((-a.q - a.r) - (-b.q - b.r))
+        return max(dq, dr, ds)
+
+    def _heuristic_move(
+        self,
+        pin_positions: Dict[str, List[int]],
+        legal_moves: Dict[int, List[int]],
+    ) -> Tuple[int, int]:
+        """Pick the legal move that most reduces distance to the nearest
+        EMPTY goal cell. This naturally handles the blocking scenario:
+        a pin sitting at the mouth of the goal triangle still has positive
+        distance to deeper empty slots, so the heuristic pushes it inward
+        to make room."""
+        opposite = self._board.colour_opposites[self.colour]
+        goal_cells = self._board.axial_of_colour(opposite)
+        my_pins = pin_positions[self.colour]
+
+        all_occupied: set = set()
+        for positions in pin_positions.values():
+            all_occupied.update(positions)
+        empty_goals = [g for g in goal_cells if g not in all_occupied]
+
+        if not empty_goals:
+            for pid, dests in legal_moves.items():
+                for dest in dests:
+                    if not self._is_repeating(pid, dest):
+                        return (pid, dest)
+            for pid, dests in legal_moves.items():
+                if dests:
+                    return (pid, dests[0])
+
+        best_move = None
+        best_gain = -999
+        cells = self._board.cells
+
+        for pid, dests in legal_moves.items():
+            cur_cell = cells[my_pins[pid]]
+            cur_dist = min(self._hex_dist(cur_cell, cells[g]) for g in empty_goals)
+            for dest in dests:
+                if self._is_repeating(pid, dest):
+                    continue
+                dest_dist = min(self._hex_dist(cells[dest], cells[g]) for g in empty_goals)
+                gain = cur_dist - dest_dist
+                if gain > best_gain:
+                    best_gain = gain
+                    best_move = (pid, dest)
+
+        if best_move is None:
+            for pid, dests in legal_moves.items():
+                if dests:
+                    return (pid, dests[0])
+        return best_move
 
     def run(self):
         """Main game loop for competition play."""
@@ -181,6 +249,16 @@ class CompetitionPlayer:
                 my_move_count=self.my_move_count,
             )
 
+            # Break oscillation: if RL picks a repeated move, override
+            override = False
+            if self._is_repeating(pin_id, to_index):
+                pin_id, to_index = self._heuristic_move(
+                    state.get("pins", {}), movable
+                )
+                override = True
+
+            self._recent_moves.append((pin_id, to_index))
+
             move_time = time.time() - move_start
             self.total_time += move_time
             self.my_move_count += 1
@@ -194,9 +272,10 @@ class CompetitionPlayer:
                 "to_index": to_index,
             })
 
+            tag = " [HEURISTIC]" if override else ""
             if mv.get("ok"):
                 print(
-                    f"Move {self.my_move_count}: pin {pin_id} -> {to_index} "
+                    f"Move {self.my_move_count}: pin {pin_id} -> {to_index}{tag} "
                     f"({move_time:.2f}s, total={self.total_time:.1f}s)"
                 )
                 if mv.get("status") == "WIN":
