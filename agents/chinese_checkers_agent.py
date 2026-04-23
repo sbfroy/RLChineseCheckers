@@ -18,6 +18,12 @@ from models.encoders import BoardEncoder
 from search.mcts import MCTS
 from env.local_game import LocalGame
 from env.action_mapping import build_legal_mask, flat_to_action, ACTION_SPACE_SIZE
+from env.colour_symmetry import (
+    canonicalize_positions,
+    canonicalize_legal_moves,
+    canonicalize_turn_order,
+    decanonicalize_to_index,
+)
 
 
 class ChineseCheckersAgent:
@@ -116,21 +122,29 @@ class ChineseCheckersAgent:
         Returns:
             (pin_id, to_index)
         """
-        # Build legal mask
-        mask = build_legal_mask(legal_moves)
+        # Canonicalize: rotate the board so my_colour looks like red. Models
+        # trained only on red/blue 2P games then see a familiar orientation
+        # regardless of which seat the server assigned us. The chosen
+        # to_index is rotated back to the original frame before returning.
+        canon_positions = canonicalize_positions(pin_positions, my_colour)
+        canon_legal_moves = canonicalize_legal_moves(legal_moves, my_colour)
+        canon_turn_order = canonicalize_turn_order(turn_order, my_colour)
+        canon_colour = 'red'
+
+        # Build legal mask (in canonical frame)
+        mask = build_legal_mask(canon_legal_moves)
 
         if not mask.any():
             raise RuntimeError("No legal moves available")
 
         if use_mcts:
-            # Reconstruct a LocalGame so MCTS can clone and simulate
             game = LocalGame.from_server_state(
-                pin_positions=pin_positions,
-                turn_order=turn_order,
-                current_turn_colour=my_colour,
+                pin_positions=canon_positions,
+                turn_order=canon_turn_order,
+                current_turn_colour=canon_colour,
                 move_count=move_count,
             )
-            policy = self.mcts.search(game, my_colour, self.model, self.encoder)
+            policy = self.mcts.search(game, canon_colour, self.model, self.encoder)
 
             if policy.sum() > 0:
                 if self.mcts.temperature < 0.01:
@@ -138,18 +152,19 @@ class ChineseCheckersAgent:
                 else:
                     probs = policy / policy.sum()
                     action_idx = int(np.random.choice(len(probs), p=probs))
-                return flat_to_action(action_idx)
+                pin_id, canon_to_index = flat_to_action(action_idx)
+                return pin_id, decanonicalize_to_index(canon_to_index, my_colour)
             # Fall through to direct policy if MCTS returned nothing
 
         # Direct network policy (fast fallback)
-        total_actions = sum(len(v) for v in legal_moves.values())
+        total_actions = sum(len(v) for v in canon_legal_moves.values())
         spatial, scalars = self.encoder.encode(
-            my_colour=my_colour,
-            pin_positions=pin_positions,
-            turn_order=turn_order,
+            my_colour=canon_colour,
+            pin_positions=canon_positions,
+            turn_order=canon_turn_order,
             move_count=move_count,
             total_legal_actions=total_actions,
-            num_active_players=len(turn_order),
+            num_active_players=len(canon_turn_order),
             my_move_count=my_move_count,
         )
 
@@ -161,4 +176,5 @@ class ChineseCheckersAgent:
 
         probs = probs.cpu().numpy()
         action_idx = int(probs.argmax())
-        return flat_to_action(action_idx)
+        pin_id, canon_to_index = flat_to_action(action_idx)
+        return pin_id, decanonicalize_to_index(canon_to_index, my_colour)
