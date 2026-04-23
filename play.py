@@ -40,7 +40,7 @@ class AntiOscillationWrapper:
 
     def __init__(self, agent):
         self.agent = agent
-        self._recent: deque = deque(maxlen=8)
+        self._recent: deque = deque(maxlen=20)
         self.last_was_heuristic = False
 
     def select_action(self, game, colour):
@@ -57,14 +57,13 @@ class AntiOscillationWrapper:
 
     def _heuristic(self, game, colour):
         opposite = COLOUR_OPPOSITES[colour]
-        goal_indices = game.board.axial_of_colour(opposite)
-        goal_cells = [game.board.cells[g] for g in goal_indices]
+        goal_set = set(game.board.axial_of_colour(opposite))
 
         occupied = set()
         for pins in game.pins_by_colour.values():
             for p in pins:
                 occupied.add(p.axialindex)
-        empty_goals = [g for g in goal_indices if g not in occupied]
+        empty_goals = [g for g in goal_set if g not in occupied]
 
         if not empty_goals:
             legal = game.get_legal_moves(colour)
@@ -78,10 +77,31 @@ class AntiOscillationWrapper:
 
         empty_goal_cells = [game.board.cells[g] for g in empty_goals]
         legal = game.get_legal_moves(colour)
+
+        # Separate pins into not-in-goal vs in-goal
+        not_in_goal = {}
+        in_goal = {}
+        for pid, dests in legal.items():
+            pos = game.pins_by_colour[colour][pid].axialindex
+            if pos in goal_set:
+                in_goal[pid] = dests
+            else:
+                not_in_goal[pid] = dests
+
+        # Prioritize moving pins NOT in goal
+        best_move = self._best_gain_move(not_in_goal, game, colour, empty_goal_cells)
+        if best_move is None:
+            best_move = self._best_gain_move(in_goal, game, colour, empty_goal_cells)
+        if best_move is None:
+            for pid, dests in legal.items():
+                if dests:
+                    return (pid, dests[0])
+        return best_move
+
+    def _best_gain_move(self, moves, game, colour, empty_goal_cells):
         best_move = None
         best_gain = -999
-
-        for pid, dests in legal.items():
+        for pid, dests in moves.items():
             cur_cell = game.board.cells[game.pins_by_colour[colour][pid].axialindex]
             cur_dist = min(axial_dist(cur_cell, gc) for gc in empty_goal_cells)
             for d in dests:
@@ -92,11 +112,6 @@ class AntiOscillationWrapper:
                 if gain > best_gain:
                     best_gain = gain
                     best_move = (pid, d)
-
-        if best_move is None:
-            for pid, dests in legal.items():
-                if dests:
-                    return (pid, dests[0])
         return best_move
 
 

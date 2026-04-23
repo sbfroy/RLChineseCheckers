@@ -78,7 +78,7 @@ class CompetitionPlayer:
         self.colour = None
         self.my_move_count = 0
         self.total_time = 0.0
-        self._recent_moves: deque = deque(maxlen=8)
+        self._recent_moves: deque = deque(maxlen=20)
         self._board = HexBoard()
 
     def _select_checkpoint(self, num_players: int) -> Optional[str]:
@@ -114,18 +114,17 @@ class CompetitionPlayer:
         legal_moves: Dict[int, List[int]],
     ) -> Tuple[int, int]:
         """Pick the legal move that most reduces distance to the nearest
-        EMPTY goal cell. This naturally handles the blocking scenario:
-        a pin sitting at the mouth of the goal triangle still has positive
-        distance to deeper empty slots, so the heuristic pushes it inward
-        to make room."""
+        EMPTY goal cell. Prioritizes moving pins NOT yet in goal so we
+        don't just shuffle already-placed pins around."""
         opposite = self._board.colour_opposites[self.colour]
-        goal_cells = self._board.axial_of_colour(opposite)
+        goal_indices = self._board.axial_of_colour(opposite)
+        goal_set = set(goal_indices)
         my_pins = pin_positions[self.colour]
 
         all_occupied: set = set()
         for positions in pin_positions.values():
             all_occupied.update(positions)
-        empty_goals = [g for g in goal_cells if g not in all_occupied]
+        empty_goals = [g for g in goal_indices if g not in all_occupied]
 
         if not empty_goals:
             for pid, dests in legal_moves.items():
@@ -136,11 +135,29 @@ class CompetitionPlayer:
                 if dests:
                     return (pid, dests[0])
 
-        best_move = None
-        best_gain = -999
         cells = self._board.cells
 
+        not_in_goal = {}
+        in_goal = {}
         for pid, dests in legal_moves.items():
+            if my_pins[pid] in goal_set:
+                in_goal[pid] = dests
+            else:
+                not_in_goal[pid] = dests
+
+        best_move = self._best_gain(not_in_goal, my_pins, cells, empty_goals)
+        if best_move is None:
+            best_move = self._best_gain(in_goal, my_pins, cells, empty_goals)
+        if best_move is None:
+            for pid, dests in legal_moves.items():
+                if dests:
+                    return (pid, dests[0])
+        return best_move
+
+    def _best_gain(self, moves, my_pins, cells, empty_goals):
+        best_move = None
+        best_gain = -999
+        for pid, dests in moves.items():
             cur_cell = cells[my_pins[pid]]
             cur_dist = min(self._hex_dist(cur_cell, cells[g]) for g in empty_goals)
             for dest in dests:
@@ -151,11 +168,6 @@ class CompetitionPlayer:
                 if gain > best_gain:
                     best_gain = gain
                     best_move = (pid, dest)
-
-        if best_move is None:
-            for pid, dests in legal_moves.items():
-                if dests:
-                    return (pid, dests[0])
         return best_move
 
     def run(self):
