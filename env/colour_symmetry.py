@@ -55,14 +55,35 @@ for _k, _c in enumerate(COLOUR_CW_CYCLE):
     }
 
 # Verify each permutation maps colour c's home cells onto red's home cells.
-_RED_HOME = {i for i, cell in enumerate(_board.cells) if cell.postype == 'red'}
+_RED_HOME_SET = {i for i, cell in enumerate(_board.cells) if cell.postype == 'red'}
 for _c in COLOUR_CW_CYCLE:
     _c_home = {i for i, cell in enumerate(_board.cells) if cell.postype == _c}
     _rotated_home = {_CELL_PERM[_c][i] for i in _c_home}
-    assert _rotated_home == _RED_HOME, (
+    assert _rotated_home == _RED_HOME_SET, (
         f"colour_symmetry: permutation for {_c} does not map its home onto red's "
-        f"(got {len(_rotated_home & _RED_HOME)}/{len(_RED_HOME)} overlap)"
+        f"(got {len(_rotated_home & _RED_HOME_SET)}/{len(_RED_HOME_SET)} overlap)"
     )
+
+# Pin-ID permutation: pin 0..9 of colour c are sorted by (r, q) within c's home.
+# After canonicalizing to red's frame, the position of c's pin i is cell_perm[c][c_home[i]].
+# That cell must be re-labeled with the red-pin-ID that SITS at that cell in training,
+# so the network's (pin_id, to_index) action space aligns with what it learned.
+_RED_HOME_LIST = _board.axial_of_colour('red')
+_RED_HOME_POS = {idx: j for j, idx in enumerate(_RED_HOME_LIST)}
+
+_PIN_ID_PERM: Dict[str, list] = {}
+_PIN_ID_PERM_INV: Dict[str, list] = {}
+for _c in COLOUR_CW_CYCLE:
+    _c_home_list = _board.axial_of_colour(_c)
+    _perm = [_RED_HOME_POS[_CELL_PERM[_c][_c_home_list[_i]]] for _i in range(len(_c_home_list))]
+    _inv = [0] * len(_perm)
+    for _i, _j in enumerate(_perm):
+        _inv[_j] = _i
+    _PIN_ID_PERM[_c] = _perm
+    _PIN_ID_PERM_INV[_c] = _inv
+
+# Red must be identity in pin-id permutation too.
+assert _PIN_ID_PERM['red'] == list(range(10)), "red pin permutation must be identity"
 
 
 def canonicalize_positions(
@@ -71,9 +92,19 @@ def canonicalize_positions(
 ) -> Dict[str, List[int]]:
     cell_perm = _CELL_PERM[my_colour]
     colour_perm = _COLOUR_PERM[my_colour]
+    pin_perm = _PIN_ID_PERM[my_colour]
     out: Dict[str, List[int]] = {}
     for colour, indices in pin_positions.items():
-        out[colour_perm[colour]] = [cell_perm[i] for i in indices]
+        new_colour = colour_perm[colour]
+        if colour == my_colour:
+            # Reorder my pins so list index matches the canonical (red) pin ID.
+            new_positions = [0] * len(indices)
+            for i, p in enumerate(indices):
+                new_positions[pin_perm[i]] = cell_perm[p]
+            out[new_colour] = new_positions
+        else:
+            # Opponent positions: remap cells only — encoder ignores opponent pin IDs.
+            out[new_colour] = [cell_perm[i] for i in indices]
     return out
 
 
@@ -82,7 +113,8 @@ def canonicalize_legal_moves(
     my_colour: str,
 ) -> Dict[int, List[int]]:
     cell_perm = _CELL_PERM[my_colour]
-    return {pid: [cell_perm[t] for t in tos] for pid, tos in legal_moves.items()}
+    pin_perm = _PIN_ID_PERM[my_colour]
+    return {pin_perm[pid]: [cell_perm[t] for t in tos] for pid, tos in legal_moves.items()}
 
 
 def canonicalize_turn_order(turn_order: List[str], my_colour: str) -> List[str]:
@@ -92,3 +124,7 @@ def canonicalize_turn_order(turn_order: List[str], my_colour: str) -> List[str]:
 
 def decanonicalize_to_index(to_index: int, my_colour: str) -> int:
     return _CELL_PERM_INV[my_colour][to_index]
+
+
+def decanonicalize_pin_id(pin_id: int, my_colour: str) -> int:
+    return _PIN_ID_PERM_INV[my_colour][pin_id]

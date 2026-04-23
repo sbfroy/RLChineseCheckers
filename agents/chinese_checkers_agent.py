@@ -23,6 +23,7 @@ from env.colour_symmetry import (
     canonicalize_legal_moves,
     canonicalize_turn_order,
     decanonicalize_to_index,
+    decanonicalize_pin_id,
 )
 
 
@@ -152,8 +153,11 @@ class ChineseCheckersAgent:
                 else:
                     probs = policy / policy.sum()
                     action_idx = int(np.random.choice(len(probs), p=probs))
-                pin_id, canon_to_index = flat_to_action(action_idx)
-                return pin_id, decanonicalize_to_index(canon_to_index, my_colour)
+                canon_pin_id, canon_to_index = flat_to_action(action_idx)
+                return (
+                    decanonicalize_pin_id(canon_pin_id, my_colour),
+                    decanonicalize_to_index(canon_to_index, my_colour),
+                )
             # Fall through to direct policy if MCTS returned nothing
 
         # Direct network policy (fast fallback)
@@ -176,5 +180,8 @@ class ChineseCheckersAgent:
 
         probs = probs.cpu().numpy()
         action_idx = int(probs.argmax())
-        pin_id, canon_to_index = flat_to_action(action_idx)
-        return pin_id, decanonicalize_to_index(canon_to_index, my_colour)
+        canon_pin_id, canon_to_index = flat_to_action(action_idx)
+        return (
+            decanonicalize_pin_id(canon_pin_id, my_colour),
+            decanonicalize_to_index(canon_to_index, my_colour),
+        )
