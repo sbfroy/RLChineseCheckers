@@ -1009,3 +1009,32 @@ python3.10 eval_gate.py \
 ```
 
 ---
+
+## [2026-04-25 18:30] Gate eval result — Phase 1a closed, ship Phase 0
+
+**Eval:** `eval_gate.py` Phase 0 vs Phase 1a, MCTS sims {20, 50, 100}, 10 games each vs greedy and heuristic, cuda.
+
+| ckpt    | sims | greedy | heuristic |
+|---------|------|--------|-----------|
+| phase0  | 20   | 1098.0 | **650.1** |
+| phase0  | 50   | 1098.0 | 609.4     |
+| phase0  | 100  | 1098.0 | 586.7     |
+| phase1a | 20   | 1098.0 | 325.9     |
+| phase1a | 50   | 1098.0 | 419.6     |
+| phase1a | 100  | 1098.0 | 420.4     |
+
+**Verdict: Phase 1a fails the gate.** phase1a @ MCTS 50 vs greedy = 1098 = phase0 @ MCTS 20 (tied, not "beat"), and phase1a is strictly worse than phase0 vs heuristic at every sim count. No score improvement to ship.
+
+**Three concrete findings:**
+
+1. **Greedy is hard-capped at 1098 across both checkpoints and all sim counts** — confirms the 8/10 endgame stall is the structural ceiling, not network or search capacity. Vs greedy in 2P at 300-move cap, **no network change can produce a score above 1098**. Only an endgame solver that pathways the last 2 lagging pins can break this ceiling.
+2. **Phase 1a is the first checkpoint where MCTS sims actually help play** (vs heuristic: 326 → 420 → 420). The value head genuinely learned positional discrimination — search now improves with depth. Real finding, just not enough to overtake phase0's stronger policy prior.
+3. **Phase 0 still shows mild reverse MCTS scaling vs heuristic** (650 → 609 → 587 as sims rise). The "high sims hurt Phase 0" pathology is milder than the 2026-04-22 diagnosis (`play.py watch` reported 239 @ MCTS 100; the anti-oscillation/repetition fixes since then likely soften it), but the trend is intact and confirms **MCTS 20 is the right competition setting for Phase 0**.
+
+**Decision: ship Phase 0 at MCTS 20.** Phase 1a is formally closed — the value head learned, but learning didn't translate into competitive strength against the binding constraint. Pivot to endgame-solver work for the remaining 27 days until 2026-05-22.
+
+**Next priority: endgame solver (week-2 plan).** Both phase0 and greedy stall around move 120 with 8 pins home and 2 stranded; the 1098 ceiling vs greedy is purely a function of those 2 unfinished pins. A targeted endgame solver — switch from MCTS to a deterministic path-search once the agent has ≥8 pins in goal — directly breaks the ceiling and is worth more than any further training.
+
+**No new training command.** Next work happens in code (endgame solver scaffolding), not in training runs.
+
+---
