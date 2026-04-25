@@ -932,3 +932,80 @@ This explains both the surprise findings:
 ```
 
 ---
+
+## [2026-04-25 17:30] Run Analysis
+
+**Phase:** value_fix (Phase 1a — fix value head with frozen policy, freeze bug fixed)
+**Run:** run_20260425_085340
+**Config:** configs/phase1_value_fix.yaml
+**Device:** cuda
+**Wall clock time:** ~5h 27m (08:53 → 14:26)
+
+**Results:**
+- Iterations completed: 30 / 30
+- Final policy loss: 2.1176 (trend: **rising** — 0.97 → 2.12. Expected: policy is frozen, so MCTS visits drift away from the prior as the value head reshapes search; the loss is just measuring that drift, not learning.)
+- Final value loss: 0.2238 (trend: 1.43 → 0.22, plateaued from iter 15 onward. **No collapse** — first run ever to sustain a non-trivial value loss.)
+- Avg game length: 300.0 (100% hit cap, every iter — endgame stall ceiling, unchanged)
+- Best checkpoint: `model_best.pt` saved at iter 5, avg score 806.0. Never beaten in remaining 25 iters.
+
+**Per-eval score trajectory (10 games each):**
+| Iter | vs random | vs greedy | vs heuristic | avg |
+|---|---|---|---|---|
+| 5  | 942.3 | 1098.0 | 377.8 | **806.0 ← best** |
+| 10 | 895.8 | 1098.0 | 410.0 | 801.3 |
+| 15 | 878.9 | 1098.0 | 361.9 | 779.6 |
+| 20 | 920.2 | 1098.0 | 379.4 | 799.2 |
+| 25 | 954.5 | 1098.0 | 329.8 | 794.1 |
+| 30 | 889.2 | 1098.0 | 316.7 | 768.0 |
+
+Phase 0 reference (sup_20260418_090744 @ MCTS 20): random 974, greedy 1098, heuristic 640, **avg ~904**.
+
+**Reward config used:** unchanged from previous run (pin_goal 0.3, distance 0.01, lagging -0.005, home_exit 0.05; use_score_terminal=true, use_score_margin=false; opponent: mixed).
+
+**Strengths observed:**
+- **Freeze actually held this time.** `console.log` line 5: `Policy FROZEN: training 38,659/7,188,477 params (value head only)`. Bug fix from previous entry shipped correctly.
+- **Value head learned discriminative outputs.** Loss bottomed at 0.22 (vs ~0.003 in every prior run). Mixed-opponent terminal-score targets gave the head genuine variance.
+- Greedy mirror pinned at 1098 every iter — frozen policy preserved Phase 0's strength on its strongest matchup.
+
+**Weaknesses observed:**
+- **The trained value head makes MCTS-20 play *worse*, not better.** vs heuristic dropped from 640 (Phase 0) to a 6-eval average of 363; vs random dropped from 974 to ~913. The head learned to *predict* score-margin variance from a mixed pool, but those predictions push MCTS toward worse moves at sim 20.
+- Best checkpoint (iter 5, avg 806) is strictly inferior to Phase 0 (avg ~904) across every opponent.
+- 100% max-moves persisted — the endgame stall ceiling is structural, not a value-head problem.
+
+**Analysis:**
+
+This run validated half the Phase 1a hypothesis and falsified the other half:
+- ✓ Mixed opponents + frozen policy → value head can learn (no collapse).
+- ✗ A "working" value head → stronger MCTS play. The opposite happened at MCTS 20.
+
+The likely reason: the value head was trained to predict `final_score / 1300` from mid-game positions reached against three different opponents. That target is dominated by *opponent identity* (random vs greedy vs heuristic produces very different score outcomes regardless of position), so the head learned an opponent-classifier-flavored signal rather than positional discrimination. When plugged into MCTS at sim 20 vs a deterministic opponent, those predictions don't move search in a useful direction.
+
+The formal gate (MCTS 50 vs greedy > 1098) was not run during training — eval is hard-coded to MCTS 20. But there's a deeper structural reason the gate is probably unreachable regardless of value-head quality: vs greedy in 2P at 300-move cap, both agents stall at 8/10 pins home and shuffle finished pins. **The 1098 score is a hard ceiling imposed by `_check_status` + endgame stall, not by value-head capacity.** Any "improvement" beyond 1098 vs greedy would require an endgame solver, not a stronger value head.
+
+**Comparison to previous runs:**
+
+| Run | freeze | opponent | value loss floor | Best avg | Gate met? |
+|---|---|---|---|---|---|
+| Phase 0 (sup_20260418_090744) | n/a | n/a | 0.0035 | ~904 | baseline |
+| run_20260423_121821 | false (bug) | mixed | 0.094 | 791 | no — policy drift |
+| **run_20260425_085340** (this) | **true** ✓ | mixed | **0.224** ✓ | **806 < 904** | **probably no** |
+
+**Decision:** Run the formal gate eval ONCE to close out Phase 1a, then pivot to endgame-solver work regardless of outcome. Rationale: even if MCTS 50 with the new value head matches the Phase 0 MCTS-20 score, the binding constraint on competition score is the 8/10 endgame stall (1098 ceiling vs greedy), and that's an environment/algorithm problem, not a network-weights problem. With 27 days to the 2026-05-22 competition, additional value-fix iteration has no upside. A new `eval_gate.py` script (committed in this entry) runs Phase 0 and Phase 1a side-by-side at sims {20, 50, 100} vs greedy and heuristic.
+
+**What I changed in this entry:**
+- Wrote `eval_gate.py` — a side-by-side gate eval comparing Phase 0 and Phase 1a checkpoints at multiple MCTS sim counts.
+- (No config edits, no archives — Phase 1a is being closed out, not iterated.)
+
+**Recommendation for next step:** Run the gate eval. If Phase 1a doesn't beat Phase 0 at MCTS 50 vs greedy, ship the Phase 0 checkpoint (`sup_20260418_090744`) at MCTS 20 for the competition and start scaffolding the endgame solver. If it does beat Phase 0 (unlikely), re-evaluate whether to ship Phase 1a at MCTS 50.
+
+**Command:**
+```bash
+python3.10 eval_gate.py \
+  --phase0 checkpoints/sup_20260418_090744/model_best.pt \
+  --phase1a checkpoints/run_20260425_085340/model_best.pt \
+  --sims 20 50 100 \
+  --num-games 10 \
+  --device cuda
+```
+
+---
