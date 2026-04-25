@@ -1109,3 +1109,34 @@ python3.10 validate_multiplayer.py \
 ```
 
 ---
+
+## [2026-04-26 morning] Diagnostic plan, not training
+
+**Read this first when the standard `/analyze` prompt fires tomorrow morning.** The previous entry's "ship Phase 0" conclusion has been walked back by the user end-of-day 2026-04-25: they don't trust that Phase 0 is competition-strong, because the only real benchmark we have (1098 vs greedy in 2P) is opponent-imposed and tells us almost nothing about how the agent handles other students' RL agents on May 22. So **don't open the next session by recommending another training run.** Open it by diagnosing what the agent actually does wrong.
+
+**Phase:** diagnostic (not bootstrap / mcts_light / mcts_full / multi_player / value_fix)
+**Run to analyze:** none — there is no fresh training run pending. The thing to "analyze" is the agent's *behavior*, captured via logged games.
+
+**Plan for the morning, in order:**
+
+1. **If multiplayer validation wasn't run last night, run it now** (single command above). Confirm no crashes, max latency under the ~1300 ms/move competition budget, sane pins-in-goal counts in 4P and 6P.
+2. **Build a game-logger** (~50 lines: load Phase 0 agent, play N games against a chosen opponent, dump JSONL with one entry per move: `{move_idx, colour, pin_id, from_idx, to_idx, pins_in_goal_per_colour, total_dist_per_colour, inference_ms, source: "mcts"|"endgame"}` and an end-of-game summary). Save under `logs/diagnostic/<timestamp>/`.
+3. **User runs the logger across matchups:** Phase 0 vs {random, greedy, heuristic, self-play}, at 2P / 4P / 6P. Roughly 12 matchups × 5 games × ~30s = ~30 min on cuda.
+4. **Pull the JSONLs and analyze them.** Specific things to look for:
+   - **Pin-trajectory curves.** For each game, plot `pins_in_goal` over time. Where does progress flatten? Move 80? 150? That's the stall point.
+   - **Stall-position dumps.** For every game that hits 300 moves, dump the board at the stall point. Is the pattern always "2 stranded pins in deep home corners"? Or are there other failure modes?
+   - **Move-quality divergence.** For each agent move, compute what greedy/heuristic *would* have played. Quantify how often they disagree, and whether the agent's choice was better or worse by `pins_in_goal` 10 moves later.
+   - **Multi-player chaos.** In 4P/6P, do we see the agent stuck in oscillation that doesn't show up in 2P? Are there positions where it's literally not advancing any pin?
+   - **Self-play diversity.** Does Phase 0 vs Phase 0 produce varied games or near-identical replays? Low diversity = saturated policy = MCTS not actually exploring.
+5. **Hand the user a prioritized list** of weaknesses with evidence from the logs (specific game IDs, move ranges).
+6. **Then** decide: targeted training fix? External implementation as data source? Architectural change? — driven by what the logs actually show.
+
+**External implementations are on the table.** The user is open to searching GitHub for open-source Chinese Checkers RL agents or engines as: (a) more diverse training opponents than the current trio, (b) imitation-learning data sources (generate games with a stronger engine, supervised-train on those), (c) reference architectures. If the diagnostic shows the agent has a specific blind spot a stronger external opponent could expose, this becomes a real option. Web searches authorized for this purpose.
+
+**Decision:** none yet — the morning's job is to GENERATE the data needed to make a decision, not make the decision itself. Don't pre-commit to a fix before seeing what the logs say.
+
+**Recommendation for next step:** Build the game-logger first thing in the local repo, then hand the user the single command to run it. After the run completes, do the analysis.
+
+**Command:** *(no run yet — first turn of the morning is to build the logger; user only needs to run it after)*
+
+---
