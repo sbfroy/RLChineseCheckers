@@ -66,8 +66,8 @@ def build_training_config(cfg: dict, args) -> TrainingConfig:
         eval_every=tc.get("eval_every", 20),
         device=args.device or tc.get("device", "cpu"),
         mcts_simulations=args.mcts_sims if args.mcts_sims is not None else mc.get("num_simulations", 100),
-        freeze_policy=args.freeze_policy if hasattr(args, 'freeze_policy') else tc.get("freeze_policy", False),
-        kl_anchor_weight=args.kl_weight if (hasattr(args, 'kl_weight') and args.kl_weight is not None) else tc.get("kl_anchor_weight", 0.0),
+        freeze_policy=args.freeze_policy or tc.get("freeze_policy", False),
+        kl_anchor_weight=args.kl_weight if args.kl_weight is not None else tc.get("kl_anchor_weight", 0.0),
     )
 
 

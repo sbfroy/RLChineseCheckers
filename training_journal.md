@@ -854,3 +854,81 @@ Value target range expands from [0.70, 0.85] (self-play) → [0.49, 0.84] (mixed
 ```
 
 ---
+
+## [2026-04-25 11:30] Run Analysis
+
+**Phase:** value_fix (Phase 1a — fix value head, supposed to be with frozen policy)
+**Run:** run_20260423_121821
+**Config:** configs/phase1_value_fix.yaml
+**Device:** cuda
+**Wall clock time:** ~5h (12:18:34 → 17:18:01)
+
+**Results:**
+- Iterations completed: 30 / 30
+- Final policy loss: 2.5183 (trend: **increasing** — 0.96 → 2.51, policy degrading throughout)
+- Final value loss: 0.0939 (trend: decreasing 2.15 → ~0.09 then plateau, NO collapse for the first time ever)
+- Avg game length: 300.0 moves (100% hit cap — same as every run, expected)
+- Best checkpoint: `model_best.pt` saved at iter 10 with avg score 791.1 — never beaten in remaining 20 iters
+
+**Per-eval score trajectory (avg across 3 baselines):**
+| Iter | vs random | vs greedy | vs heuristic | avg |
+|---|---|---|---|---|
+| 5  | 282.7 | 269.6  | 249.5 | 267.3 |
+| 10 | 802.2 | 1098.0 | 473.2 | **791.1** ← best |
+| 15 | 513.8 | 429.5  | 514.9 | 486.1 |
+| 20 | 697.8 | 1098.0 | 440.7 | 745.5 |
+| 25 | 538.6 | 1098.0 | 524.2 | 720.3 |
+| 30 | 436.0 | 1098.0 | 315.0 | 616.3 |
+
+Phase 0 reference (best 2P checkpoint, MCTS 20): random 974, greedy 1098, heuristic 640, **avg ~904**.
+
+**Reward config used:**
+- pin_goal_weight: 0.3, distance_weight: 0.01, lagging_weight: -0.005, home_exit_weight: 0.05
+- use_score_terminal: true, use_score_margin: false, opponent: mixed (random+greedy+heuristic)
+
+**Strengths observed:**
+- **Value head finally learning.** Loss settled at 0.09-0.14 across iters 5-30, never collapsed to ~0.003 like every previous run. Mixed-opponent terminal-score targets gave the value head genuine variance (G ranging ~0.49-0.84 depending on opponent), and it learned to discriminate.
+- vs greedy mirror score stays pinned at 1098 — agent did not lose its ability to play greedy-tier moves.
+
+**Weaknesses observed:**
+- **Best checkpoint is strictly worse than Phase 0 across every opponent.** vs random 802 < 974, vs heuristic 473 < 640, vs greedy tied at 1098. So the run produced no useful checkpoint.
+- **Policy actively degraded** during training: policy_loss climbed monotonically 0.96 → 2.51, scores dropped after the iter-10 peak. By iter 30, vs heuristic was 315 (half of Phase 0's 640).
+
+**ROOT CAUSE — bug in `train.py:69`:**
+```python
+freeze_policy=args.freeze_policy if hasattr(args, 'freeze_policy') else tc.get("freeze_policy", False)
+```
+Argparse always sets `args.freeze_policy` (default False from `action="store_true"`), so `hasattr` is always True and the CLI default silently overrode the YAML's `freeze_policy: true`. `run_metadata.json` confirms the run actually trained with `freeze_policy: false` and `kl_anchor_weight: 0.0` — joint training, no anchor. The previous journal entry's plan ("freeze policy → only value head trains") never executed. What actually ran was vanilla RL with mixed opponents, no protection on the policy.
+
+This explains both the surprise findings:
+- Value head fix worked because mixed opponent diversity is what fixed it (independent of freezing).
+- Policy degraded because nothing was holding it to Phase 0's distribution while MCTS visit counts pulled it elsewhere on each iteration.
+
+**Comparison to previous runs:**
+
+| Run | freeze_policy | opponent | Value loss floor | Best avg score | Notes |
+|---|---|---|---|---|---|
+| Phase 0 (sup_20260418_090744) | n/a (supervised) | n/a | 0.0035 (collapsed, low variance target) | ~904 | competition baseline |
+| run_20260420_181217 (Phase 1 v1) | false | self-play | ~0.003 | regression | catastrophic forgetting |
+| run_20260423_103308 (value_fix v2 first attempt) | (intended true) | mixed | — | — | crashed, no data |
+| run_20260423_121821 (this) | **false (bug)** | mixed | **0.094** ✓ | 791.1 < Phase 0 | value learns, policy drifts |
+
+**Decision:** Fix the bug. Re-run value_fix with the policy actually frozen this time. The hypothesis from the previous entry (freeze policy + mixed opponents → value head learns without policy regression) was never tested because of the CLI/YAML override bug. The mixed-opponent diversity demonstrably works (value loss 0.09); we just need to keep the policy still while the value head trains. With freeze_policy active, the only trainable parameters are the value head; policy can't drift, so by construction the new run can only equal or outperform Phase 0.
+
+**Code change shipped with this entry:**
+- `train.py:69` — `freeze_policy=args.freeze_policy or tc.get("freeze_policy", False)`. CLI flag and YAML can each enable; neither can disable when the other says yes. Verified the fix locally with a small argparse script: yaml=True/no-CLI → True; yaml=False/CLI=True → True; yaml=False/no-CLI → False.
+- Belt-and-suspenders: command below also passes `--freeze-policy` on the CLI so the run is guaranteed to freeze regardless of which override path is taken.
+
+**Gate (unchanged from previous entry):** After 30 iterations, eval the new `model_best.pt` at MCTS 50 and MCTS 100 against greedy. If MCTS 50 score > Phase 0's 1098 at MCTS 20, the value head fix translates to playing strength — ship the new checkpoint with MCTS 50 for 2P. If MCTS 50 ≤ MCTS 20, accept Phase 0 and pivot fully to endgame-solver work for the 9/10 → 10/10 stall.
+
+**Recommendation for next run:** Resume from Phase 0 with `--freeze-policy` explicit. 30 iters × 60 games × mixed opponents on cuda → ~5h, same as before.
+
+**Command:**
+```bash
+./run_training.sh configs/phase1_value_fix.yaml \
+  --phase value_fix \
+  --resume checkpoints/sup_20260418_090744/model_best.pt \
+  --freeze-policy
+```
+
+---
