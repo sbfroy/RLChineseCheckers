@@ -1067,3 +1067,45 @@ python3.10 eval_gate.py \
 ```
 
 ---
+
+## [2026-04-25 20:15] Endgame solver gate result — 1098 ceiling is opponent-imposed, not architectural
+
+**Eval:** `eval_gate.py --sims 20 --num-games 10` (80 games, ~14 min, cuda).
+
+| endgame | ckpt    | sims | greedy | heuristic |
+|---------|---------|------|--------|-----------|
+| off     | phase0  | 20   | 1098.0 | 567.7     |
+| off     | phase1a | 20   | 1098.0 | 379.2     |
+| on      | phase0  | 20   | **1098.0** | 608.3 |
+| on      | phase1a | 20   | **1098.0** | 421.7 |
+
+**Result:** vs greedy, the solver does not change the score by even a fraction (zero variance — 1098.0 every game across both modes). Vs heuristic the +41 deltas are within noise (the 18:30 eval reported 650.1 here vs 567.7 today; ~80-pt swing per condition is normal at N=10).
+
+**Why the solver can't beat 1098 vs greedy — structural reasoning:**
+
+`compute_scores()` decomposes 1098 = 100 (time) + ~0 (move @ 150 moves) + 800 (8 pins × 100) + 198 (200 - total_dist≈2). To exceed 1098 we need either pins_in_goal > 8 or total_dist < 2.
+
+Greedy in 2P also caps at 8 pins home — its back-corner home-triangle pins never get prioritized (no chain-jumps available once forward neighbours have left, and sideways/forward 1-step gains tie with stronger forward-pin moves elsewhere; greedy's first-best tiebreak strands them). Greedy's 2 stranded pins sit in greedy's home zone, which **is** our goal zone (red↔blue). So our 10-cell goal zone has 8 of our pins + 2 of greedy's stranded pins = 10 occupied = **0 empty cells**. The solver computes `goal_targets = goal_cells - occupied = ∅`, returns None, and falls through to MCTS. The endgame ran but had nowhere to path to.
+
+This is unbreakable by any improvement to our network or search. We can't move greedy's pins. The 1098 vs greedy ceiling is opponent-imposed.
+
+**Implication for the competition:** real opponents will be other students' RL agents, not greedy. They probably won't strand 2 pins in their own home zone, so the goal zone won't be artificially blocked. The solver should help in those matchups; the 2P-vs-greedy benchmark just can't expose its upside.
+
+**Vs heuristic:** the solver's threshold-8 gate never activates because we only get ~4 pins in goal vs heuristic (score 567 ≈ 100 + 400 + 67). The +41 endgame=on delta is noise from MCTS sampling (temperature=0.1) and is well within the run-to-run swing we already saw (650 → 567).
+
+**Decision: ship Phase 0 + MCTS 20 + endgame solver. No further 2P training or eval.** With 27 days remaining, additional 2P optimization has zero EV — the cap is structural.
+
+**One thing left to check:** that the endgame solver doesn't break 4P or 6P play. `validate_multiplayer.py` constructs `ChineseCheckersAgent(...)` with default args, so it picks up `use_endgame=True` automatically — no script change needed. Run it once across {2P, 4P, 6P} to confirm no regressions, then we're done.
+
+**Recommendation for next step:** Run multiplayer validation. Confirm no crashes, latency under 2s/move competition budget, and pins-in-goal counts comparable to or better than the pre-solver Phase 0 numbers. If clean, declare the agent shipped.
+
+**Command:**
+```bash
+python3.10 validate_multiplayer.py \
+  --checkpoint checkpoints/sup_20260418_090744/model_best.pt \
+  --mcts-sims 20 \
+  --players 2 4 6 \
+  --device cuda
+```
+
+---
