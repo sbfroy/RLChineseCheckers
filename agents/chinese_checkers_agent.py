@@ -16,6 +16,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from models.policy_value_net import PolicyValueNet
 from models.encoders import BoardEncoder
 from search.mcts import MCTS
+from search.endgame import EndgameSolver
 from env.local_game import LocalGame
 from env.action_mapping import build_legal_mask, flat_to_action, ACTION_SPACE_SIZE
 from env.colour_symmetry import (
@@ -48,6 +49,8 @@ class ChineseCheckersAgent:
         temperature: float = 0.1,
         time_limit: Optional[float] = None,
         device: str = "cpu",
+        use_endgame: bool = True,
+        endgame_threshold: int = 8,
     ):
         self.device = device
         self.encoder = BoardEncoder()
@@ -77,6 +80,11 @@ class ChineseCheckersAgent:
             device=device,
         )
 
+        self.endgame_solver: Optional[EndgameSolver] = (
+            EndgameSolver(activation_threshold=endgame_threshold)
+            if use_endgame else None
+        )
+
     def select_action(self, game: LocalGame, colour: str) -> Tuple[int, int]:
         """
         Select an action for local game play.
@@ -86,6 +94,11 @@ class ChineseCheckersAgent:
         If temperature is ~0, takes the argmax (deterministic, for
         competition play).
         """
+        if self.endgame_solver is not None and self.endgame_solver.is_active(game, colour):
+            move = self.endgame_solver.select_action(game, colour)
+            if move is not None:
+                return move
+
         policy = self.mcts.search(game, colour, self.model, self.encoder)
 
         if policy.sum() == 0:
@@ -137,6 +150,24 @@ class ChineseCheckersAgent:
 
         if not mask.any():
             raise RuntimeError("No legal moves available")
+
+        # Endgame solver runs in the canonical frame, then we rotate the
+        # chosen action back. It bypasses MCTS entirely once the gate fires.
+        if self.endgame_solver is not None:
+            eg_game = LocalGame.from_server_state(
+                pin_positions=canon_positions,
+                turn_order=canon_turn_order,
+                current_turn_colour=canon_colour,
+                move_count=move_count,
+            )
+            if self.endgame_solver.is_active(eg_game, canon_colour):
+                move = self.endgame_solver.select_action(eg_game, canon_colour)
+                if move is not None:
+                    canon_pin_id, canon_to_index = move
+                    return (
+                        decanonicalize_pin_id(canon_pin_id, my_colour),
+                        decanonicalize_to_index(canon_to_index, my_colour),
+                    )
 
         if use_mcts:
             game = LocalGame.from_server_state(

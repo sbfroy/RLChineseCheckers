@@ -1038,3 +1038,32 @@ python3.10 eval_gate.py \
 **No new training command.** Next work happens in code (endgame solver scaffolding), not in training runs.
 
 ---
+
+## [2026-04-25 19:30] Endgame solver shipped — pending validation
+
+**Code change:** Added `search/endgame.py` (BFS pathfinder), wired into `agents/chinese_checkers_agent.py` with `use_endgame=True` default (threshold 8 pins in goal), and added a `--endgame-modes` ablation flag to `eval_gate.py`. Six unit tests in `tests/test_endgame.py` pass; the legal-destinations helper agrees with `Pin.getPossibleMoves` on a real board state and the BFS finds expected single-move paths.
+
+**Algorithm:** when ≥8 of our pins are in the goal zone, replace MCTS with a per-pin BFS. Each BFS edge is a single full move (chain-jumps included natively, since `Pin.getPossibleMoves` already returns max-jump landings). For each lagging pin, BFS shortest action sequence to any empty goal cell; play the first move on the shortest path across all lagging pins. Opponent positions are static for one BFS, and we re-plan each turn — so the planner adapts to opponent moves without paying for full multi-pin coordination search. Falls back to MCTS if no path is found.
+
+**Why this should break the 1098 ceiling vs greedy:**
+- The ceiling is exactly `8 × 100 + (200 - total_dist) + 100 ≈ 1098` with `total_dist ≈ 2`. The lagging pins are within ~1-2 hex cells of the goal but unreachable via greedy distance reduction within 300 moves.
+- Chain-jumps that span several cells in one turn exist; greedy's "best one-step distance reduction" objective discards them when a single-step neighbor advance is available, even though the chain-jump strictly dominates.
+- BFS on the *move-count* metric (not hex distance) finds those chains. A pin that needs 6 hex steps may complete in 1-2 moves via a chain-jump.
+
+**Expected effect:** vs greedy in 2P, score should rise from 1098 toward 1198+ (9 pins home → distance penalty drops further). vs heuristic, score should rise above the current 650 ceiling. If neither happens, the BFS isn't finding the chains we expect and we'll need to look at the actual stalled positions.
+
+**Testing plan:** `eval_gate.py` with `--endgame-modes off on` does the side-by-side comparison. Cheapest informative run: `--sims 20 --num-games 10` (80 games total, ~14 min on cuda). Phase0 row at `endgame=off` should reproduce the 2026-04-25 18:30 numbers (1098 / 650); the `endgame=on` row is the test.
+
+**Recommendation for next step:** Run the gate eval below. If `phase0 @ sims=20 @ endgame=on` exceeds 1098 vs greedy, the solver works — ship it for competition. If it ties at 1098 or regresses, investigate the actual stalled board state (the BFS might not be reaching goals because no path exists with opponent pins in current positions, in which case we need a different fix — e.g., disrupting the opponent's blockade earlier).
+
+**Command:**
+```bash
+python3.10 eval_gate.py \
+  --phase0 checkpoints/sup_20260418_090744/model_best.pt \
+  --phase1a checkpoints/run_20260425_085340/model_best.pt \
+  --sims 20 \
+  --num-games 10 \
+  --device cuda
+```
+
+---

@@ -23,12 +23,13 @@ from agents.heuristic_agent import GreedyProgressAgent, HeuristicAgent
 from training.evaluate import play_match
 
 
-def eval_one(ckpt, sims, opponent, num_games, device):
+def eval_one(ckpt, sims, opponent, num_games, device, use_endgame):
     agent = ChineseCheckersAgent(
         checkpoint_path=ckpt,
         mcts_simulations=sims,
         temperature=0.1,
         device=device,
+        use_endgame=use_endgame,
     )
     res = play_match(
         agent_a=agent,
@@ -47,6 +48,13 @@ def main():
     p.add_argument("--sims", type=int, nargs="+", default=[20, 50, 100])
     p.add_argument("--num-games", type=int, default=10)
     p.add_argument("--device", default="cuda")
+    p.add_argument(
+        "--endgame-modes",
+        nargs="+",
+        default=["off", "on"],
+        choices=["off", "on"],
+        help="Run with endgame solver disabled, enabled, or both (default: both).",
+    )
     args = p.parse_args()
 
     opponents = [
@@ -56,20 +64,27 @@ def main():
     ckpts = [("phase0", args.phase0), ("phase1a", args.phase1a)]
 
     rows = []
-    for label, ckpt in ckpts:
-        for sims in args.sims:
-            scores = {}
-            for op_name, op in opponents:
-                scores[op_name] = eval_one(ckpt, sims, op, args.num_games, args.device)
-            rows.append((label, sims, scores))
+    for endgame_mode in args.endgame_modes:
+        use_endgame = endgame_mode == "on"
+        for label, ckpt in ckpts:
+            for sims in args.sims:
+                scores = {}
+                for op_name, op in opponents:
+                    scores[op_name] = eval_one(
+                        ckpt, sims, op, args.num_games, args.device, use_endgame
+                    )
+                rows.append((endgame_mode, label, sims, scores))
 
     print()
-    print(f"{'ckpt':<10} {'sims':<6} {'greedy':<10} {'heuristic':<10}")
-    print("-" * 40)
-    for label, sims, scores in rows:
-        print(f"{label:<10} {sims:<6} {scores['greedy']:<10.1f} {scores['heuristic']:<10.1f}")
+    print(f"{'endgame':<8} {'ckpt':<10} {'sims':<6} {'greedy':<10} {'heuristic':<10}")
+    print("-" * 50)
+    for endgame_mode, label, sims, scores in rows:
+        print(
+            f"{endgame_mode:<8} {label:<10} {sims:<6} "
+            f"{scores['greedy']:<10.1f} {scores['heuristic']:<10.1f}"
+        )
     print()
-    print("Gate: phase1a @ MCTS 50 must beat phase0 @ MCTS 20 on greedy.")
+    print("Gate: endgame=on must beat endgame=off on greedy (target: > 1098).")
 
 
 if __name__ == "__main__":
