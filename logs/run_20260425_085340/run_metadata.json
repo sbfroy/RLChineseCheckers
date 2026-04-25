@@ -1,0 +1,51 @@
+{
+  "run_name": "run_20260425_085340",
+  "started_at": "2026-04-25T08:53:59.713661",
+  "phase": "value_fix",
+  "config_file": "configs/phase1_value_fix.yaml",
+  "device": "cuda",
+  "training_config": {
+    "num_games_per_iteration": 60,
+    "num_players": 2,
+    "temperature": 1.0,
+    "mcts_simulations": 20,
+    "batch_size": 256,
+    "epochs_per_iteration": 10,
+    "learning_rate": 0.0003,
+    "weight_decay": 0.0001,
+    "policy_loss_weight": 1.0,
+    "value_loss_weight": 1.0,
+    "buffer_capacity": 200000,
+    "min_buffer_size": 512,
+    "num_iterations": 30,
+    "eval_every": 5,
+    "checkpoint_every": 5,
+    "checkpoint_dir": "checkpoints",
+    "run_name": "run_20260425_085340",
+    "device": "cuda",
+    "freeze_policy": true,
+    "kl_anchor_weight": 0.0
+  },
+  "reward_config": {
+    "win_reward": 1.0,
+    "loss_reward": -1.0,
+    "draw_reward": -0.5,
+    "max_moves_reward": -0.3,
+    "pin_goal_weight": 0.3,
+    "distance_weight": 0.01,
+    "lagging_weight": -0.005,
+    "home_exit_weight": 0.05,
+    "mobility_weight": 0.001,
+    "use_score_terminal": true,
+    "score_normalization": 1300.0,
+    "use_score_margin": false
+  },
+  "model_params": 7188477,
+  "mcts_enabled": true,
+  "mcts_simulations": 20,
+  "opponent": [
+    "RandomAgent",
+    "GreedyProgressAgent",
+    "HeuristicAgent"
+  ]
+}
