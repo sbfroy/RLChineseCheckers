@@ -31,6 +31,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from agents.chinese_checkers_agent import ChineseCheckersAgent
 from agents.heuristic_agent import GreedyProgressAgent, HeuristicAgent
+from agents.maxdistance_agent import MaxDistanceAgent
 from agents.random_agent import RandomAgent
 from env.action_mapping import action_to_flat, build_legal_mask
 from env.local_game import LocalGame
@@ -54,6 +55,18 @@ class EpsilonHeuristicAgent:
         return self.inner.select_action(game, colour)
 
 
+def opp_factory_name(factory) -> str:
+    """Stable string label for a class or lambda factory used in opponent pool."""
+    if hasattr(factory, "__name__") and factory.__name__ != "<lambda>":
+        return factory.__name__
+    # Lambda → instantiate once and read the class name + epsilon if present.
+    inst = factory()
+    name = type(inst).__name__
+    if hasattr(inst, "epsilon"):
+        name += f"(ε={inst.epsilon})"
+    return name
+
+
 def generate_games(num_games: int, encoder: BoardEncoder,
                    score_norm: float = 1300.0,
                    num_players_list: list = None,
@@ -61,26 +74,32 @@ def generate_games(num_games: int, encoder: BoardEncoder,
     """
     Play `num_games` games with HeuristicAgent as the teacher.
 
-    The teacher alternates which board seat it plays (first vs last of
-    turn_order) across games. The opponent class cycles through a pool
-    for state diversity; every non-teacher seat in the game is filled
-    with a fresh instance of that opponent class. Player count cycles
-    through `num_players_list` (default [2, 4, 6]) so a single run
-    produces data for all board sizes.
+    Teacher seat alternates between turn_order[0] and turn_order[-1] across
+    games. Player count cycles through `num_players_list` (round-robin) so
+    each player count gets equal coverage. **Every non-teacher seat samples
+    its opponent class independently from the pool** — in 4P/6P games this
+    gives the teacher much richer state distributions than the previous
+    "all opponents are the same class per game" setup did.
 
-    Only teacher moves are recorded as training examples. Each example
-    is labelled with the teacher's own final competition score at end
-    of game.
+    Only teacher moves are recorded as training examples. Each example is
+    labelled with the teacher's own final competition score at end of game.
     """
     if num_players_list is None:
-        num_players_list = [2]
+        num_players_list = [2, 4, 6]
 
     teacher = HeuristicAgent()
+    # Diverse opponent pool. RandomAgent and GreedyProgressAgent are the
+    # extremes; MaxDistanceAgent has a different play style (max forward
+    # jump distance, not max distance reduction); two ε-Heuristic variants
+    # cover the "mostly-strong-with-some-noise" middle ground.
     opponent_classes = [
         RandomAgent,
         GreedyProgressAgent,
-        lambda: EpsilonHeuristicAgent(epsilon=0.25),
+        MaxDistanceAgent,
+        lambda: EpsilonHeuristicAgent(epsilon=0.15),
+        lambda: EpsilonHeuristicAgent(epsilon=0.30),
     ]
+    opponent_counts = {opp_factory_name(c): 0 for c in opponent_classes}
 
     spatial_buf = []
     scalars_buf = []
@@ -91,8 +110,7 @@ def generate_games(num_games: int, encoder: BoardEncoder,
     t0 = time.time()
 
     for g in range(num_games):
-        opp_cls = opponent_classes[g % len(opponent_classes)]
-        teacher_is_first = (g // len(opponent_classes)) % 2 == 0
+        teacher_is_first = (g // len(num_players_list)) % 2 == 0
         num_players = num_players_list[g % len(num_players_list)]
 
         game = LocalGame(num_players=num_players, max_moves=300)
@@ -104,7 +122,9 @@ def generate_games(num_games: int, encoder: BoardEncoder,
             if c == teacher_colour:
                 agents[c] = teacher
             else:
-                agents[c] = opp_cls()
+                opp_factory = py_random.choice(opponent_classes)
+                agents[c] = opp_factory()
+                opponent_counts[opp_factory_name(opp_factory)] += 1
 
         indices_this_game = []
 
@@ -149,6 +169,12 @@ def generate_games(num_games: int, encoder: BoardEncoder,
             dt = time.time() - t0
             print(f"  Generated {g+1}/{num_games} games "
                   f"({len(action_buf):,} exps, {dt:.1f}s)")
+
+    if verbose:
+        total_opp_seats = sum(opponent_counts.values()) or 1
+        print("  Opponent-seat distribution across all games:")
+        for name, n in sorted(opponent_counts.items()):
+            print(f"    {name:32s}  {n:6d}  ({100.0 * n / total_opp_seats:5.1f}%)")
 
     return {
         "spatial": np.stack(spatial_buf),
@@ -315,9 +341,10 @@ def main():
     parser.add_argument(
         "--num-players",
         type=str,
-        default="2",
+        default="2,4,6",
         help="Comma-separated list of player counts to train on (e.g. '2,4,6'). "
-             "Games cycle through the list; use '2,4,6' for multiplayer bootstrap.",
+             "Games cycle round-robin through the list, so each count gets equal "
+             "coverage. Default '2,4,6' = balanced multi-player bootstrap.",
     )
     args = parser.parse_args()
 
@@ -424,13 +451,31 @@ def main():
         model.load_state_dict(best_state)
 
     if args.eval_games > 0:
-        print(f"\n=== Eval ({args.eval_games} games per opponent) ===")
+        print(f"\n=== Quick 2P sanity eval ({args.eval_games} games per opponent) ===")
+        print("  NOTE: 2P vs greedy hits the structural 1098 ceiling and 2P scores")
+        print("  in general DO NOT reflect 4P/6P / self-play strength. This is a")
+        print("  smoke check only — the real gate is diagnose_play.py, command below.")
         eval_results = evaluate_agent_quick(
             model, args.device, num_games=args.eval_games,
         )
     else:
-        print("\n=== Eval skipped (--eval-games 0) ===")
+        print("\n=== Quick 2P sanity eval skipped (--eval-games 0) ===")
         eval_results = None
+
+    print("\n=== GATE: run diagnose_play.py against this checkpoint ===")
+    print("  python3.10 diagnose_play.py \\")
+    print(f"    --checkpoint {ckpt_path} \\")
+    print(f"    --device {args.device} \\")
+    print("    --mcts-sims 20 \\")
+    print("    --temperature 0.1 \\")
+    print("    --matchups 2p_vs_random 2p_vs_greedy 2p_vs_heuristic 2p_self_play "
+          "4p_vs_greedy 6p_vs_greedy \\")
+    print("    --games-per-matchup 3")
+    print("  Pass criteria (ALL four required):")
+    print("    self-play pins ≥ 6 avg")
+    print("    4P-vs-greedy pins ≥ 4 avg")
+    print("    2P-vs-heuristic pins ≥ 6 avg")
+    print("    self-play greedy_match_rate < 0.5")
 
     metadata = {
         "run_name": args.run_name,
