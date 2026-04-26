@@ -1223,3 +1223,61 @@ python3.10 diagnose_play.py \
 ```
 
 ---
+
+## [2026-04-26 late evening] Stage 0 + Stage 1 results — gate PASSED
+
+**Phase:** supervised (Phase 0b v1)
+**Run:** `phase_0b_v1` (9000 games, 50 epochs)
+**Stage 0 diagnostic:** `logs/diagnostic/20260426_093649` (noise on, existing weights — failed)
+**Stage 1 diagnostic:** `logs/diagnostic/20260426_132217` (Phase 0b v1 — passed)
+
+**Stage 0 verdict (noise on Phase 0 weights):** weights NOT salvageable.
+- Multi-player pins: 1.0 (gate ≥3 — fail). Self-play pins: 0.0 (gate ≥5 — fail).
+- Determinism not broken by α=0.3/ε=0.25 noise — verified no seed in inference path; value head was so flat that 25% Dirichlet mixing couldn't move the visit-count argmax at 20 sims.
+- Decision: Stage 1 from random init. Locked in by the rule we wrote down.
+
+**Stage 1 changes (committed):**
+- Default `--num-players` from `2` → `2,4,6` (round-robin, equal coverage).
+- Per-seat opponent sampling (was per-game, identical across all opponent seats).
+- Opponent pool expanded to 5: Random, Greedy, MaxDistance (PunGrumpy-inspired, native rewrite), ε-Heuristic@0.15, ε-Heuristic@0.30.
+- Inline 2P-only eval downgraded to smoke check; `diagnose_play.py` printed at end as the real gate.
+
+**Stage 1 training:**
+- 9000 games / 769k experiences / 9.86 GB / 1149s (~19 min) generation.
+- Opponent distribution as targeted (~20% each).
+- 50 epochs / 10726s (~3 hours) on cuda.
+- val_policy_loss: 0.99 → 0.42 (still improving at epoch 50 — could train longer).
+- val_action_accuracy: 71% → 86%.
+- val_value_loss flat at 0.0027 throughout — value head still learning ~constant; same Phase 0 pathology, doesn't matter for supervised play but matters for any future Phase 1.
+
+**Stage 1 gate result (`logs/diagnostic/20260426_132217`):**
+
+| matchup           | P0 pins | P0b pins | Δ pins | greedy_match | heur_match |
+|-------------------|---------|----------|--------|--------------|------------|
+| 2p_vs_random      |   5.7   |   6.0    |  +0.3  |   0.29       |   0.49     |
+| 2p_vs_greedy      |   8.0   |   8.0    |   0    |   0.79       |   1.00     |
+| 2p_vs_heuristic   |   3.0   |   6.3    |  +3.3  |   0.54       |   0.75     |
+| **2p_self_play**  |   2.0   |   7.0    |  +5.0  |   0.33       |   0.58     |
+| **4p_vs_greedy**  |   1.0   |   8.0    | **+7.0** |   0.87       |   1.00     |
+| **6p_vs_greedy**  |   1.0   |   4.3    |  +3.3  |   0.38       |   0.65     |
+
+**Pass criteria:**
+- self-play pins ≥ 6 → **7.0** ✅
+- 4P-vs-greedy pins ≥ 4 → **8.0** ✅
+- 2P-vs-heuristic pins ≥ 6 → **6.3** ✅
+- self-play greedy_match_rate < 0.5 → **0.33** ✅
+
+**Notable:** `2p_self_play__g1` ended at move 151 with **red winning 10/10 pins / score 1300.2** — the first actual win across all our diagnostic runs since the project began. Self-play replicates 1300.2/792/894 show real trajectory variance from the same start state.
+
+**Verdict: ship Phase 0b v1 as the new strong fallback. Phase 0 is fully retired.**
+
+**What's still imperfect:**
+- 6P is the weakest matchup (4.3 pins). Partially structural — RL only gets ~50 moves per 6P game vs ~150 in 2P.
+- Value head is still learning ~constant; will be the load-bearing weakness if we attempt Phase 1 RL refinement.
+- vs-deterministic-opponent matchups still produce identical scores across replays; competition predictability unfixed.
+
+**Recommendation for next step:** decide between (a) Phase 0b v2 (more games, weight 6P higher, train longer — incremental upside, low risk) and (b) careful Phase 1 RL refinement with KL anchor + per-iteration gate (real upside, but Phase 1 has burned us twice). Hold for user direction before launching either — this is a strong checkpoint and we should not blow it up reflexively.
+
+**Command:** *(no command yet — pending direction on Phase 0b v2 vs Phase 1)*
+
+---
