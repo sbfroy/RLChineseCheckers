@@ -1281,3 +1281,34 @@ python3.10 diagnose_play.py \
 **Command:** *(no command yet — pending direction on Phase 0b v2 vs Phase 1)*
 
 ---
+
+## [2026-04-26 night] Competition path lock-in verified
+
+**Phase:** integration test (no training)
+**Run:** ad-hoc 2P game via `multi system single machine minimal/game.py` JSON-RPC server.
+
+**Setup:** two `env/server_adapter.py` clients connected to one `game.py` server.
+- Red: Phase 0b checkpoint with α=0.3, ε=0.05 (the proposed competition default)
+- Blue: same checkpoint, deterministic (ε=0)
+
+**Result:** `WIN!` at move 67. Red 1288.2 (10/10 pins, dist 200, time 88), blue 1185.4 (9/10 pins, dist 199, time 86).
+
+- Cold-start 1.06s, every subsequent move 0.06–0.16s, total 5.7s of think time.
+- Anti-oscillation fallback fired twice (moves 39, 43) — logged with `[HEURISTIC]` tag, didn't derail the game.
+- Noise didn't hurt strength (1 game sample): noisy red won by one pin and four moves. Sufficient to ship α=0.3 ε=0.05 as the competition default.
+
+**What's verified end-to-end:** JSON-RPC protocol, canonicalization in `select_action_from_server_state`, MCTS root noise plumbing through CompetitionPlayer, server-side scoring, server-side timeout handling, server-side win detection.
+
+**Decision:** Phase 0b v1 is the shippable fallback for 2026-05-22. Saved to memory `competition_path_locked.md` along with the launch command. Any future Phase 1 attempt must not degrade this; gate on diagnose_play.py against Phase 0b after every iteration to detect regression.
+
+**Next step:** Phase 1 RL refinement v3 design. Hard constraints (locked in writing here so a future Phase 1 catastrophic forgetting cannot sneak past us):
+- Init from `phase_0b_v1` weights (not random — we have a real foundation)
+- KL anchor to Phase 0b weights, weight tuned conservatively
+- Multi-player self-play data generation (2P/4P/6P balanced — same lesson as Phase 0b)
+- Gate on `diagnose_play.py` after every N iterations; automatic stop if any of the four Phase 0b gate criteria regresses below baseline
+- Address the value head directly (still learning ~constant per Phase 0b training logs); likely needs reward shaping or per-step value targets, not just terminal scores
+- MCTS sims during data gen 50–100 (not 20), so noisy exploration actually influences visit counts
+
+**Command:** *(none — Phase 1 v3 design starts next; no run launches before user reviews the design)*
+
+---
