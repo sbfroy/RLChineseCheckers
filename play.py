@@ -325,13 +325,21 @@ def interactive_game(agent, agent_name="Agent", num_players=2, max_moves=300):
         )
 
 
-def make_agent(args):
-    """Build the RL agent from args."""
+def make_agent(args, checkpoint=None, dirichlet_alpha=None, root_noise_epsilon=None):
+    """Build the RL agent from args. Optionally override checkpoint + noise."""
     return ChineseCheckersAgent(
-        checkpoint_path=args.checkpoint,
+        checkpoint_path=checkpoint if checkpoint is not None else args.checkpoint,
         mcts_simulations=args.mcts_sims,
         temperature=0.1,
         device=args.device,
+        dirichlet_alpha=(
+            dirichlet_alpha if dirichlet_alpha is not None
+            else getattr(args, "dirichlet_alpha", 0.0)
+        ),
+        root_noise_epsilon=(
+            root_noise_epsilon if root_noise_epsilon is not None
+            else getattr(args, "root_noise_epsilon", 0.0)
+        ),
     )
 
 
@@ -352,12 +360,25 @@ def main():
     sub = parser.add_subparsers(dest="mode")
 
     # Watch mode
-    wp = sub.add_parser("watch", help="Watch agent vs baseline")
+    wp = sub.add_parser("watch", help="Watch agent vs baseline (or vs self)")
     wp.add_argument("--checkpoint", default=None, help="Agent checkpoint path")
-    wp.add_argument("--opponent", default="greedy", choices=["random", "greedy", "heuristic"])
+    wp.add_argument("--checkpoint2", default=None,
+                    help="Second checkpoint for the opponent seat. "
+                         "Only used when --opponent self. Defaults to --checkpoint.")
+    wp.add_argument("--opponent", default="greedy",
+                    choices=["random", "greedy", "heuristic", "self"],
+                    help="'self' = RL vs RL (same or different checkpoint)")
     wp.add_argument("--mcts-sims", type=int, default=0, help="MCTS sims (0=network only)")
     wp.add_argument("--delay", type=float, default=0.3, help="Delay between moves (seconds)")
     wp.add_argument("--device", default="cpu")
+    wp.add_argument("--dirichlet-alpha", type=float, default=0.0,
+                    help="MCTS root noise alpha for the primary agent (0=off)")
+    wp.add_argument("--root-noise-epsilon", type=float, default=0.0,
+                    help="MCTS root noise epsilon for the primary agent (0=off)")
+    wp.add_argument("--opponent-dirichlet-alpha", type=float, default=0.0,
+                    help="MCTS root noise alpha for the --opponent self RL agent (0=off)")
+    wp.add_argument("--opponent-root-noise-epsilon", type=float, default=0.0,
+                    help="MCTS root noise epsilon for the --opponent self RL agent (0=off)")
 
     # Play mode
     pp = sub.add_parser("play", help="Play against the agent")
@@ -375,9 +396,25 @@ def main():
 
     if args.mode == "watch":
         agent = make_agent(args)
-        baseline = make_baseline(args.opponent)
-        watch_game(agent, baseline, name_a="RL Agent", name_b=args.opponent.title(),
-                   delay=args.delay)
+        if args.opponent == "self":
+            opponent_ckpt = args.checkpoint2 or args.checkpoint
+            opponent = make_agent(
+                args,
+                checkpoint=opponent_ckpt,
+                dirichlet_alpha=args.opponent_dirichlet_alpha,
+                root_noise_epsilon=args.opponent_root_noise_epsilon,
+            )
+            opp_label = (
+                "RL (self)"
+                if opponent_ckpt == args.checkpoint
+                else f"RL ({os.path.basename(os.path.dirname(opponent_ckpt))})"
+            )
+            watch_game(agent, opponent, name_a="RL Agent (noisy)",
+                       name_b=opp_label, delay=args.delay)
+        else:
+            baseline = make_baseline(args.opponent)
+            watch_game(agent, baseline, name_a="RL Agent", name_b=args.opponent.title(),
+                       delay=args.delay)
 
     elif args.mode == "play":
         agent = make_agent(args)
