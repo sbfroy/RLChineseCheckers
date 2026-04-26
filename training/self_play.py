@@ -40,6 +40,7 @@ class SelfPlayWorker:
         encoder: BoardEncoder,
         reward_config: Optional[RewardConfig] = None,
         num_players: int = 2,
+        num_players_list: Optional[List[int]] = None,
         temperature: float = 1.0,
         temperature_drop_move: int = 20,
         mcts=None,
@@ -50,7 +51,13 @@ class SelfPlayWorker:
         self.model = model
         self.encoder = encoder
         self.reward_shaper = RewardShaper(reward_config)
+        # When num_players_list is set, rotate through it per game (round-robin
+        # via _game_counter). When unset, fall back to the scalar num_players.
+        # This is the Phase-0b lesson: training on a single player count means
+        # the network never sees the others.
         self.num_players = num_players
+        self.num_players_list = num_players_list
+        self._game_counter = 0
         self.temperature = temperature
         self.temperature_drop_move = temperature_drop_move
         self.mcts = mcts
@@ -59,6 +66,13 @@ class SelfPlayWorker:
         self.opponent = opponent
         self._last_game_length = None
         self._last_game_hit_max = False
+
+    def _next_num_players(self) -> int:
+        if self.num_players_list:
+            n = self.num_players_list[self._game_counter % len(self.num_players_list)]
+            self._game_counter += 1
+            return n
+        return self.num_players
 
     def play_game(self) -> List[Experience]:
         """
@@ -69,7 +83,8 @@ class SelfPlayWorker:
 
         Returns list of Experience objects.
         """
-        game = LocalGame(num_players=self.num_players)
+        np_this_game = self._next_num_players()
+        game = LocalGame(num_players=np_this_game)
         game.reset()
 
         # Determine which colour(s) the RL agent plays
@@ -254,6 +269,7 @@ def generate_self_play_data(
     encoder: BoardEncoder,
     num_games: int = 10,
     num_players: int = 2,
+    num_players_list: Optional[List[int]] = None,
     temperature: float = 1.0,
     mcts=None,
     mcts_simulations: int = 50,
@@ -275,6 +291,7 @@ def generate_self_play_data(
         encoder=encoder,
         reward_config=reward_config,
         num_players=num_players,
+        num_players_list=num_players_list,
         temperature=temperature,
         mcts=mcts,
         mcts_simulations=mcts_simulations,

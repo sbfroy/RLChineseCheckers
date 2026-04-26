@@ -33,6 +33,7 @@ class TrainingConfig:
     # Self-play
     num_games_per_iteration: int = 20
     num_players: int = 2
+    num_players_list: Optional[List[int]] = None  # if set, rotates per game
     temperature: float = 1.0
     mcts_simulations: int = 50
 
@@ -61,6 +62,14 @@ class TrainingConfig:
     # Phase control
     freeze_policy: bool = False
     kl_anchor_weight: float = 0.0
+
+    # Auto-stop on regression below baseline. The evaluator may set entries
+    # in this dict; if any criterion in eval_results regresses below
+    # baseline minus tolerance, training halts. Phase 1 v3 uses this to
+    # prevent catastrophic forgetting from sneaking past us.
+    gate_baseline: Optional[Dict[str, float]] = None
+    gate_tolerance: float = 1.0
+    gate_grace_iterations: int = 5  # don't auto-stop in the first N iters
 
 
 class Trainer:
@@ -235,11 +244,20 @@ class Trainer:
         os.makedirs(self.run_dir, exist_ok=True)
         self._started_at = datetime.now().isoformat()
 
+        np_str = (
+            ",".join(str(n) for n in cfg.num_players_list)
+            if cfg.num_players_list else str(cfg.num_players)
+        )
         print(f"Starting training: {cfg.num_iterations} iterations")
         print(f"  Run: {cfg.run_name} -> {self.run_dir}")
-        print(f"  Self-play: {cfg.num_games_per_iteration} games/iter, {cfg.num_players} players")
+        print(f"  Self-play: {cfg.num_games_per_iteration} games/iter, players={np_str}")
         print(f"  Training: batch={cfg.batch_size}, epochs={cfg.epochs_per_iteration}")
         print(f"  MCTS: {'enabled' if self.mcts else 'disabled'} ({cfg.mcts_simulations} sims)")
+        print(f"  KL anchor: {'on' if self.anchor_model is not None else 'off'} "
+              f"(weight={cfg.kl_anchor_weight})")
+        if cfg.gate_baseline:
+            print(f"  Gate baseline: {cfg.gate_baseline} (tolerance {cfg.gate_tolerance}, "
+                  f"grace {cfg.gate_grace_iterations} iters)")
         print(f"  Logs: {self.log_dir}")
         print()
 
@@ -260,6 +278,7 @@ class Trainer:
                 encoder=self.encoder,
                 num_games=cfg.num_games_per_iteration,
                 num_players=cfg.num_players,
+                num_players_list=cfg.num_players_list,
                 temperature=cfg.temperature,
                 mcts=self.mcts,
                 mcts_simulations=cfg.mcts_simulations,
@@ -302,6 +321,7 @@ class Trainer:
             )
 
             # 3. Evaluate
+            regression_stop = False
             if evaluator and iteration % cfg.eval_every == 0:
                 eval_results = evaluator(self.model)
                 print(f"  EVAL: {eval_results}")
@@ -311,11 +331,43 @@ class Trainer:
                 # Track best model by eval score
                 eval_score = None
                 if isinstance(eval_results, dict):
-                    eval_score = eval_results.get("avg_score", eval_results.get("score"))
+                    # Phase 1 v3 evaluator returns a "composite" score; older
+                    # evaluators return "avg_score" or "score".
+                    eval_score = eval_results.get(
+                        "composite",
+                        eval_results.get("avg_score", eval_results.get("score")),
+                    )
                 if eval_score is not None and eval_score > self.best_eval_score:
                     self.best_eval_score = eval_score
                     self._save_checkpoint(iteration, tag="best")
                     print(f"  NEW BEST model (score={eval_score:.1f})")
+
+                # Auto-stop on regression below baseline. Only fires after the
+                # grace period — early iterations naturally have noisy eval and
+                # we don't want to bail before the policy has settled.
+                if (
+                    cfg.gate_baseline
+                    and iteration >= cfg.gate_grace_iterations
+                    and isinstance(eval_results, dict)
+                    and "gate_metrics" in eval_results
+                ):
+                    metrics = eval_results["gate_metrics"]
+                    regressions = []
+                    for key, baseline in cfg.gate_baseline.items():
+                        current = metrics.get(key)
+                        if current is None:
+                            continue
+                        if current < baseline - cfg.gate_tolerance:
+                            regressions.append(
+                                f"{key}: {current:.2f} < baseline {baseline:.2f} "
+                                f"- tol {cfg.gate_tolerance:.2f}"
+                            )
+                    if regressions:
+                        print(
+                            f"  AUTO-STOP: gate regression below baseline:\n    "
+                            + "\n    ".join(regressions)
+                        )
+                        regression_stop = True
 
             # Update status file
             self._write_status(
@@ -330,6 +382,14 @@ class Trainer:
             # 4. Checkpoint
             if iteration % cfg.checkpoint_every == 0:
                 self._save_checkpoint(iteration)
+
+            # 5. Auto-stop?
+            if regression_stop:
+                print(
+                    f"  Halting at iter {iteration} to preserve the prior best "
+                    f"checkpoint (score={self.best_eval_score:.1f})."
+                )
+                break
 
         # Final checkpoint
         self._save_checkpoint(self.iteration, final=True)

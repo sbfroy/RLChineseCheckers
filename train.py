@@ -45,13 +45,37 @@ def build_model(cfg: dict) -> PolicyValueNet:
     )
 
 
+def _parse_num_players(cfg_value, args_value):
+    """Accept int (2), str ('2,4,6'), or list ([2,4,6]). CLI int overrides config.
+    Returns (num_players_scalar, num_players_list_or_None)."""
+    if args_value:
+        return int(args_value), None
+    if cfg_value is None:
+        return 2, None
+    if isinstance(cfg_value, int):
+        return cfg_value, None
+    if isinstance(cfg_value, str):
+        parts = [int(x.strip()) for x in cfg_value.split(",") if x.strip()]
+        if len(parts) == 1:
+            return parts[0], None
+        return parts[0], parts
+    if isinstance(cfg_value, (list, tuple)):
+        if len(cfg_value) == 1:
+            return int(cfg_value[0]), None
+        return int(cfg_value[0]), [int(x) for x in cfg_value]
+    raise ValueError(f"Unrecognised num_players value: {cfg_value!r}")
+
+
 def build_training_config(cfg: dict, args) -> TrainingConfig:
     tc = cfg.get("training", {})
     mc = cfg.get("mcts", {})
+    np_scalar, np_list = _parse_num_players(tc.get("num_players"), args.players)
+    gate_baseline = tc.get("gate_baseline") or None
     return TrainingConfig(
         num_iterations=args.iterations or tc.get("num_iterations", 200),
         num_games_per_iteration=args.games or tc.get("num_games_per_iteration", 30),
-        num_players=args.players or tc.get("num_players", 2),
+        num_players=np_scalar,
+        num_players_list=np_list,
         batch_size=tc.get("batch_size", 128),
         epochs_per_iteration=tc.get("epochs_per_iteration", 5),
         learning_rate=tc.get("learning_rate", 1e-3),
@@ -68,6 +92,9 @@ def build_training_config(cfg: dict, args) -> TrainingConfig:
         mcts_simulations=args.mcts_sims if args.mcts_sims is not None else mc.get("num_simulations", 100),
         freeze_policy=args.freeze_policy or tc.get("freeze_policy", False),
         kl_anchor_weight=args.kl_weight if args.kl_weight is not None else tc.get("kl_anchor_weight", 0.0),
+        gate_baseline=gate_baseline,
+        gate_tolerance=tc.get("gate_tolerance", 1.0),
+        gate_grace_iterations=tc.get("gate_grace_iterations", 5),
     )
 
 
@@ -116,6 +143,99 @@ def make_evaluator(model_factory_args, eval_cfg, device="cpu"):
         results["avg_score"] = round(total_score / max(num_baselines, 1), 1)
         return results
     return evaluator
+
+
+def make_phase1_evaluator(eval_cfg, device="cpu"):
+    """
+    Phase 1 v3 gate evaluator. Runs the diagnose_play.py matchup matrix
+    in-process and returns the four Phase 0b gate criteria as
+    `gate_metrics` plus a composite score for best-checkpoint selection.
+
+    eval_cfg fields used:
+      matchups: list of matchup ids (default = full Phase 0b set)
+      games_per_matchup: int (default 2 — 1/3 cheaper than diagnose_play default)
+      mcts_sims: int (default 20 — same as competition)
+    """
+    # Late import so a missing diagnose_play.py doesn't break imports here.
+    sys.path.insert(0, os.path.dirname(__file__))
+    from diagnose_play import (
+        run_game, parse_matchups, build_summary, aggregate_metrics,
+    )
+
+    matchups = eval_cfg.get(
+        "matchups",
+        [
+            "2p_vs_random", "2p_vs_greedy", "2p_vs_heuristic",
+            "2p_self_play", "4p_vs_greedy", "6p_vs_greedy",
+        ],
+    )
+    games_per_matchup = eval_cfg.get("games_per_matchup", 2)
+    eval_mcts_sims = eval_cfg.get("mcts_sims", 20)
+
+    def evaluator(model):
+        agent = ChineseCheckersAgent(
+            model=model, mcts_simulations=eval_mcts_sims,
+            temperature=0.1, device=device,
+        )
+        matchup_specs = parse_matchups(matchups, agent)
+        summaries = []
+        for matchup_id, np_, rl_seats, opp_factory in matchup_specs:
+            for i in range(games_per_matchup):
+                result = run_game(
+                    game_id=f"eval__{matchup_id}__g{i+1}",
+                    matchup=matchup_id,
+                    num_players=np_,
+                    rl_agent=agent,
+                    rl_seats=rl_seats,
+                    opponent_factory=opp_factory,
+                    # Counterfactual queries are needed for the gate's
+                    # self-play greedy_match_rate criterion. Costs ~5ms per
+                    # move × 150 moves × 12 games ≈ 9s per eval — cheap.
+                    log_baselines=True,
+                )
+                summaries.append(build_summary(result))
+
+        agg = aggregate_metrics(summaries)
+
+        def lookup(matchup, key):
+            return agg.get(matchup, {}).get(key)
+
+        # The four Phase 0b gate criteria.
+        gate_metrics = {
+            "self_play_pins": lookup("2p_self_play", "mean_rl_pins_in_goal"),
+            "4p_vs_greedy_pins": lookup("4p_vs_greedy", "mean_rl_pins_in_goal"),
+            "2p_vs_heuristic_pins": lookup("2p_vs_heuristic", "mean_rl_pins_in_goal"),
+            "self_play_greedy_match_rate_neg": (
+                # Negate so "more negative is worse" matches the others;
+                # baseline check is `current < baseline - tolerance`.
+                -agg.get("2p_self_play", {}).get("mean_greedy_match_rate", 1.0)
+                if agg.get("2p_self_play", {}).get("mean_greedy_match_rate") is not None
+                else None
+            ),
+        }
+        # Composite score for "is this checkpoint better than the previous best":
+        # sum of pins-in-goal across the three matchups (heuristic, self, 4P).
+        composite = sum(
+            v for k, v in gate_metrics.items()
+            if k != "self_play_greedy_match_rate_neg" and v is not None
+        )
+        return {
+            "agg": agg,
+            "gate_metrics": gate_metrics,
+            "composite": composite,
+        }
+
+    return evaluator
+
+
+def load_phase0b_anchor_agent(checkpoint_path: str, device: str, mcts_sims: int = 20):
+    """Load a Phase 0b checkpoint as a frozen RL opponent for the data-gen pool."""
+    return ChineseCheckersAgent(
+        checkpoint_path=checkpoint_path,
+        mcts_simulations=mcts_sims,
+        temperature=0.1,
+        device=device,
+    )
 
 
 def main():
@@ -189,6 +309,7 @@ def main():
     # Build opponent if configured
     opponent = None
     opp_name = cfg.get("training", {}).get("opponent")
+    include_anchor = cfg.get("training", {}).get("include_anchor_as_opponent", False)
     if opp_name:
         opp_map = {
             "heuristic": HeuristicAgent,
@@ -206,6 +327,19 @@ def main():
             else:
                 print(f"  WARNING: Unknown opponent '{opp_name}', using self-play")
 
+    # Add the KL anchor checkpoint as one of the opponent pool members. Phase
+    # 1 v3 uses this so the agent trains against a frozen Phase 0b copy of
+    # itself — which produces stronger play states than greedy/heuristic do.
+    if include_anchor and args.kl_anchor:
+        anchor_opp = load_phase0b_anchor_agent(args.kl_anchor, train_cfg.device)
+        if opponent is None:
+            opponent = [anchor_opp]
+        elif isinstance(opponent, list):
+            opponent.append(anchor_opp)
+        else:
+            opponent = [opponent, anchor_opp]
+        print(f"  Added Phase 0b anchor agent to opponent pool: {args.kl_anchor}")
+
     # Build trainer
     trainer = Trainer(
         model=model,
@@ -221,10 +355,18 @@ def main():
     trainer.config_file = args.config
     trainer.save_run_metadata()
 
-    # Build evaluator
+    # Build evaluator. "phase1" uses the diagnose_play.py matchup matrix
+    # (the honest gate). Anything else uses the legacy 2P-only eval.
     evaluator = None
     if not args.no_eval:
-        evaluator = make_evaluator(cfg, cfg.get("evaluation", {}), device=train_cfg.device)
+        eval_cfg = cfg.get("evaluation", {})
+        eval_kind = eval_cfg.get("kind", "legacy")
+        if eval_kind == "phase1":
+            evaluator = make_phase1_evaluator(eval_cfg, device=train_cfg.device)
+            print(f"  Evaluator: phase1 (diagnose_play matchup matrix)")
+        else:
+            evaluator = make_evaluator(cfg, eval_cfg, device=train_cfg.device)
+            print(f"  Evaluator: legacy 2P (random/greedy/heuristic)")
 
     # Train with status tracking
     try:

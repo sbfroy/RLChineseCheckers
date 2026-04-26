@@ -1,0 +1,100 @@
+# Phase 1 v3 — RL refinement of Phase 0b v1.
+#
+# This is the "third attempt at Phase 1" config. The two prior attempts
+# (Phase 1 = catastrophic forgetting; Phase 1a = frozen-policy value-fix
+# that scored worse than Phase 0) failed because (a) the eval was 2P-only
+# and lied about the agent's real strength, (b) there was no auto-stop
+# when the policy regressed below the supervised baseline, and (c) the
+# data distribution didn't cover what the competition will actually use.
+#
+# v3 fixes all three:
+#  * Init from phase_0b_v1/model_best.pt (--resume flag at launch)
+#  * KL anchor to phase_0b_v1/model_best.pt (--kl-anchor at launch)
+#  * Multi-player rotation: 2P/4P/6P each iteration
+#  * Phase 0b agent is included in the opponent pool (include_anchor_as_opponent)
+#  * Evaluator runs the diagnose_play.py matchup matrix every 5 iterations
+#  * Auto-stop if any of the four Phase 0b gate criteria regresses
+#    below baseline minus tolerance (after grace period)
+#
+# Launch (the user runs this):
+#
+#   python3.10 train.py \
+#     --config configs/phase1_v3.yaml \
+#     --resume checkpoints/phase_0b_v1/model_best.pt \
+#     --kl-anchor checkpoints/phase_0b_v1/model_best.pt \
+#     --device cuda \
+#     --phase rl_refine \
+#     --run-name phase1_v3_<run_id>
+
+model:
+  num_res_blocks: 6
+  trunk_channels: 128
+  policy_channels: 32
+  value_hidden: 128
+
+training:
+  num_iterations: 100
+  num_games_per_iteration: 30
+  num_players: "2,4,6"          # round-robin per game; matches Phase 0b
+  batch_size: 256
+  epochs_per_iteration: 5
+  learning_rate: 0.0001         # 10x lower than Phase 0b's 1e-3 — small steps from a strong start
+  weight_decay: 0.0001
+  policy_loss_weight: 1.0
+  value_loss_weight: 1.0
+  buffer_capacity: 200000
+  min_buffer_size: 512
+  temperature: 1.0              # exploration during data gen
+  checkpoint_dir: checkpoints
+  checkpoint_every: 10
+  eval_every: 5                 # cheap-ish: ~12 games per eval × 100 iters / 5 = 240 games total
+  device: cuda
+  freeze_policy: false
+  kl_anchor_weight: 0.1         # confirmed conservative default
+  opponent: mixed               # base pool: random/greedy/heuristic
+  include_anchor_as_opponent: true  # plus a frozen Phase 0b copy
+  # Auto-stop. If any of these regresses below (baseline - gate_tolerance)
+  # after gate_grace_iterations, training halts and the prior best
+  # checkpoint is preserved. Baselines below come from
+  # logs/diagnostic/20260426_132217 (the run that locked in Phase 0b).
+  # Note: self_play_greedy_match_rate is monitored in eval output but not
+  # in the auto-stop gate — its 0–1 scale doesn't share a tolerance with
+  # the pin counts, and pin-count regressions would catch a policy
+  # collapse to greedy-mimicry anyway.
+  gate_baseline:
+    self_play_pins: 7.0
+    4p_vs_greedy_pins: 8.0
+    2p_vs_heuristic_pins: 6.3
+  gate_tolerance: 1.0
+  gate_grace_iterations: 5
+
+mcts:
+  num_simulations: 50           # higher than Phase 0b/competition to give noise + value head a stronger signal
+  c_puct: 1.5
+  temperature: 1.0
+
+rewards:
+  win_reward: 1.0
+  loss_reward: -1.0
+  draw_reward: -0.5
+  max_moves_reward: -0.3
+  pin_goal_weight: 0.3
+  distance_weight: 0.01
+  lagging_weight: -0.005
+  home_exit_weight: 0.05
+  mobility_weight: 0.001
+  use_score_terminal: true
+  score_normalization: 1300.0
+  use_score_margin: false        # absolute score; relative-to-opponent collapses in self-play
+
+evaluation:
+  kind: phase1                   # use make_phase1_evaluator (diagnose_play matrix)
+  matchups:
+    - 2p_vs_random
+    - 2p_vs_greedy
+    - 2p_vs_heuristic
+    - 2p_self_play
+    - 4p_vs_greedy
+    - 6p_vs_greedy
+  games_per_matchup: 2           # 12 games per eval; ~90s on cuda
+  mcts_sims: 20                  # competition setting — eval mirrors deployed strength
