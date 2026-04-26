@@ -1,0 +1,1 @@
+{"epoch": 1, "policy_loss": 2.808427002841613, "value_loss": 0.03823846941368184, "action_accuracy": 0.379041248606466, "val_policy_loss": 2.9390479554521276, "val_value_loss": 0.41000694924212516, "val_action_accuracy": 0.44680851063829785, "seconds": 1.8}
