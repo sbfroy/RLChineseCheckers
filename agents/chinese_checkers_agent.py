@@ -51,6 +51,8 @@ class ChineseCheckersAgent:
         device: str = "cpu",
         use_endgame: bool = True,
         endgame_threshold: int = 8,
+        dirichlet_alpha: float = 0.0,
+        root_noise_epsilon: float = 0.0,
     ):
         self.device = device
         self.encoder = BoardEncoder()
@@ -78,6 +80,8 @@ class ChineseCheckersAgent:
             temperature=temperature,
             time_limit=time_limit,
             device=device,
+            dirichlet_alpha=dirichlet_alpha,
+            root_noise_epsilon=root_noise_epsilon,
         )
 
         self.endgame_solver: Optional[EndgameSolver] = (

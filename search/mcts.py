@@ -132,12 +132,19 @@ class MCTS:
         temperature: float = 1.0,
         time_limit: Optional[float] = None,
         device: str = "cpu",
+        dirichlet_alpha: float = 0.0,
+        root_noise_epsilon: float = 0.0,
     ):
         self.c_puct = c_puct
         self.num_simulations = num_simulations
         self.temperature = temperature
         self.time_limit = time_limit  # seconds, overrides num_simulations if set
         self.device = device
+        # AlphaZero-style root exploration noise. Both must be > 0 to fire.
+        # α controls noise sharpness (smaller = more concentrated); ε is the
+        # mixing weight against the network prior.
+        self.dirichlet_alpha = dirichlet_alpha
+        self.root_noise_epsilon = root_noise_epsilon
 
     def search(
         self,
@@ -169,6 +176,16 @@ class MCTS:
         if not root.children:
             # No legal moves
             return np.zeros(ACTION_SPACE_SIZE, dtype=np.float32)
+
+        # Root-only Dirichlet exploration noise. Mixing happens after expansion
+        # so the noise rides on the legal-action subset only.
+        if self.dirichlet_alpha > 0 and self.root_noise_epsilon > 0:
+            actions = list(root.children.keys())
+            noise = np.random.dirichlet([self.dirichlet_alpha] * len(actions))
+            eps = self.root_noise_epsilon
+            for i, a in enumerate(actions):
+                child = root.children[a]
+                child.prior = (1.0 - eps) * child.prior + eps * float(noise[i])
 
         start_time = time.time()
         sims_done = 0

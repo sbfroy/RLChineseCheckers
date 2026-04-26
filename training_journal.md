@@ -1140,3 +1140,86 @@ python3.10 validate_multiplayer.py \
 **Command:** *(no run yet — first turn of the morning is to build the logger; user only needs to run it after)*
 
 ---
+
+## [2026-04-26 evening] Diagnostic run analysis + Phase 0b plan
+
+**Phase:** diagnostic
+**Run:** logs/diagnostic/20260426_090244 (18 games, ~200s wall on cuda, MCTS 20)
+**Config:** diagnose_play.py default matrix — 2P/4P/6P × random/greedy/heuristic/self at 3 games each
+
+**Aggregate:**
+
+| matchup           | ok | RL_score | pins | greedy_match | heur_match |
+|-------------------|----|----------|------|--------------|------------|
+| 2p_vs_random      | 3  |   854.7  | 5.7  | 0.19         | 0.35       |
+| 2p_vs_greedy      | 3  |  1098.0  | 8.0  | 0.79         | **1.00**   |
+| 2p_vs_heuristic   | 3  |   574.0  | 3.0  | 0.10         | 0.35       |
+| 2p_self_play      | 3  |   462.7  | 2.0  | 0.08         | 0.22       |
+| 4p_vs_greedy      | 3  |   303.2  | 1.0  | 0.03         | 0.26       |
+| 6p_vs_greedy      | 3  |   307.2  | 1.0  | 0.08         | 0.08       |
+
+(In 6P, a greedy opponent — purple — actually won at move 228. RL got 1 pin.)
+
+**Strengths:** Engine/MCTS/encoding/scoring all robust across 2/4/6P (no crashes, 18/18 games completed). Endgame solver fires correctly where the gate is reachable. Latency well within budget (~75ms/move avg).
+
+**Weaknesses (six findings, captured fully in memory `diagnose_findings_20260426.md`):**
+1. **Fully deterministic** — first 10 RL moves identical across every replay of every matchup; no MCTS root noise.
+2. **Overfit to 2P-vs-greedy distribution** — perfect (1.00) heuristic-mimicry vs greedy; falls apart elsewhere.
+3. **Multi-player unplayable** — 1 pin in 4P/6P, opponent wins 6P.
+4. **Backward play in unfamiliar states** — 30% of moves go backward vs heuristic, 35% in self-play.
+5. **4P endgame oscillation** — pin bounces 0→1→0→1 for 30 turns; anti-oscillation wrapper exists in `play.py` only, NOT in training, validate_multiplayer, diagnose_play, OR the bare server-adapter call path. `env/server_adapter.py` has its own duplicate (different) fallback — distribution mismatch between training and competition.
+6. **Self-play collapsed** — 0/3/3 pins in goal across 3 games; agent does not know how to play a strong opponent.
+
+**Root-cause analysis:** Phase 0 supervised data was effectively one opponent (greedy) at one player count (2P), so the network learned that single distribution and falls apart on anything else. Every previous "fix" (anti-oscillation, endgame solver, value-head freeze) treated symptoms inside the narrow distribution instead of widening the distribution itself.
+
+**Architectural audit (codebase walkthrough this evening):**
+- **AlphaZero-style is right.** Engine, encoder, training loop all sound. Don't switch architectures with 27 days left.
+- **3P/5P NOT a competition concern.** `game.py` hard-codes player assignment in pairs; server only sends 2/4/6. Adding 3P/5P = 500–800 lines including a 3-fold-symmetry refactor of the canonicalization tables. Skip it.
+- **Bandaid candidates for cleanup:** endgame solver (masks weak value head), anti-oscillation duplication (training/competition mismatch), 6-fold colour symmetry (overkill if we keep agent 2P-style internally).
+- **`supervised_bootstrap.py` already supports `--num-players 2,4,6`** and a stochastic opponent pool. The fix is to actually USE the multi-player flag (Phase 0 likely ran 2P-only).
+- **MCTS had no Dirichlet root noise.** This is THE direct cause of the determinism finding.
+
+**Decision: reject "ship Phase 0," replace with two-stage Phase 0b plan.**
+
+**Stage 0 — cheap signal (~10 min, run tonight or tomorrow):**
+
+Patch landed this evening: `search/mcts.py` now accepts `dirichlet_alpha` and `root_noise_epsilon`; `agents/chinese_checkers_agent.py` and `diagnose_play.py` both forward them. Re-run diagnose with noise on against the existing Phase 0 checkpoint to see whether the weights have any redeemable signal:
+
+```bash
+python3.10 diagnose_play.py \
+  --checkpoint checkpoints/sup_20260418_090744/model_best.pt \
+  --device cuda \
+  --mcts-sims 20 \
+  --temperature 0.1 \
+  --dirichlet-alpha 0.3 \
+  --root-noise-epsilon 0.25 \
+  --matchups 2p_vs_random 2p_vs_greedy 2p_vs_heuristic 2p_self_play 4p_vs_greedy 6p_vs_greedy \
+  --games-per-matchup 3
+```
+
+**Decision rule:** if multi-player pins ≥ 3 or self-play pins ≥ 5, the network has latent multi-player capability and Stage 1 bootstraps from this checkpoint. Otherwise Stage 1 restarts from random init.
+
+**Stage 1 — Phase 0b retrain (gated on Stage 0, ~1–2 days):**
+- Modify `training/supervised_bootstrap.py` to actually use 2P/4P/6P (1/3 each — equal weighting per user's instruction)
+- Expand opponent pool to ~6 (add stochastic-greedy, lookahead-2-heuristic, Phase 0 self-snapshot)
+- Per-move opponent sampling (not per-game) for richer state distribution
+- Endgame solver OFF during training, ON during competition
+- Pass gate = `diagnose_play.py` shows: self-play pins ≥ 6, 4P pins ≥ 4, 2P-vs-heuristic pins ≥ 6, self-play greedy_match_rate < 0.5
+- NO Phase 1 RL refinement until Stage 1 passes the gate
+
+**Recommendation for next step:** User runs the Stage 0 command above. After the new diagnose log syncs back, parse it and decide Stage 1 bootstrap vs random init.
+
+**Command:**
+```bash
+python3.10 diagnose_play.py \
+  --checkpoint checkpoints/sup_20260418_090744/model_best.pt \
+  --device cuda \
+  --mcts-sims 20 \
+  --temperature 0.1 \
+  --dirichlet-alpha 0.3 \
+  --root-noise-epsilon 0.25 \
+  --matchups 2p_vs_random 2p_vs_greedy 2p_vs_heuristic 2p_self_play 4p_vs_greedy 6p_vs_greedy \
+  --games-per-matchup 3
+```
+
+---

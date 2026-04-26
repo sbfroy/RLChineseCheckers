@@ -444,6 +444,10 @@ def main():
                         help="skip greedy/heuristic counterfactual queries (faster)")
     parser.add_argument("--no-endgame", action="store_true",
                         help="disable the endgame solver in the RL agent")
+    parser.add_argument("--dirichlet-alpha", type=float, default=0.0,
+                        help="MCTS root Dirichlet noise alpha (0 = off)")
+    parser.add_argument("--root-noise-epsilon", type=float, default=0.0,
+                        help="MCTS root noise mixing weight (0 = off)")
     args = parser.parse_args()
 
     if not os.path.exists(args.checkpoint):
@@ -460,10 +464,15 @@ def main():
 
     print(f"Diagnostic run id: {run_id}")
     print(f"Output: {out_dir}")
+    noise_on = args.dirichlet_alpha > 0 and args.root_noise_epsilon > 0
+    noise_str = (
+        f"α={args.dirichlet_alpha}, ε={args.root_noise_epsilon}" if noise_on else "OFF"
+    )
     print(f"Loading agent: {args.checkpoint} "
           f"(device={args.device}, mcts_sims={args.mcts_sims}, "
           f"temperature={args.temperature}, "
-          f"endgame={'OFF' if args.no_endgame else 'ON'})")
+          f"endgame={'OFF' if args.no_endgame else 'ON'}, "
+          f"root_noise={noise_str})")
 
     rl_agent = ChineseCheckersAgent(
         checkpoint_path=args.checkpoint,
@@ -471,6 +480,8 @@ def main():
         temperature=args.temperature,
         device=args.device,
         use_endgame=not args.no_endgame,
+        dirichlet_alpha=args.dirichlet_alpha,
+        root_noise_epsilon=args.root_noise_epsilon,
     )
 
     matchups = parse_matchups(args.matchups, rl_agent)
@@ -485,6 +496,8 @@ def main():
         "mcts_sims": args.mcts_sims,
         "temperature": args.temperature,
         "use_endgame": not args.no_endgame,
+        "dirichlet_alpha": args.dirichlet_alpha,
+        "root_noise_epsilon": args.root_noise_epsilon,
         "matchups": [m[0] for m in matchups],
         "games_per_matchup": args.games_per_matchup,
         "max_moves": args.max_moves,
