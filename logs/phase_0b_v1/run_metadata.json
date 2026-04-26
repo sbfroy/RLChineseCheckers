@@ -1,0 +1,61 @@
+{
+  "run_name": "phase_0b_v1",
+  "phase": "supervised_bootstrap",
+  "started_at": "2026-04-26T13:21:17.583224",
+  "args": {
+    "num_games": 9000,
+    "epochs": 50,
+    "batch_size": 256,
+    "lr": 0.001,
+    "weight_decay": 0.0001,
+    "value_loss_weight": 1.0,
+    "device": "cuda",
+    "run_name": "phase_0b_v1",
+    "num_res_blocks": 6,
+    "trunk_channels": 128,
+    "eval_games": 3,
+    "score_norm": 1300.0,
+    "seed": 42,
+    "num_players": "2,4,6"
+  },
+  "num_experiences": 769227,
+  "generation_seconds": 1149.4,
+  "training_seconds": 10726.6,
+  "model_params": 7188477,
+  "final_metrics": {
+    "epoch": 50,
+    "policy_loss": 0.2931692296274435,
+    "value_loss": 0.0026134715573062836,
+    "action_accuracy": 0.8960994353869774,
+    "val_policy_loss": 0.4219278368450625,
+    "val_value_loss": 0.0026972364735105554,
+    "val_action_accuracy": 0.8592340292764099,
+    "seconds": 213.8
+  },
+  "eval_results": {
+    "random": {
+      "avg_score": 1028.3,
+      "opp_avg_score": 232.7,
+      "avg_game_length": 269.0,
+      "wins": 1,
+      "losses": 0,
+      "draws": 2
+    },
+    "greedy": {
+      "avg_score": 1098.0,
+      "opp_avg_score": 1098.0,
+      "avg_game_length": 300.0,
+      "wins": 0,
+      "losses": 0,
+      "draws": 3
+    },
+    "heuristic": {
+      "avg_score": 1063.8,
+      "opp_avg_score": 1097.1,
+      "avg_game_length": 247.0,
+      "wins": 1,
+      "losses": 0,
+      "draws": 2
+    }
+  }
+}
