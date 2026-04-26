@@ -64,6 +64,8 @@ class CompetitionPlayer:
         mcts_simulations: int = 20,
         time_limit: Optional[float] = None,
         device: str = "cpu",
+        dirichlet_alpha: float = 0.0,
+        root_noise_epsilon: float = 0.0,
     ):
         self.player_name = player_name
         self.checkpoint_path = checkpoint_path
@@ -71,6 +73,10 @@ class CompetitionPlayer:
         self.mcts_simulations = mcts_simulations
         self.time_limit = time_limit
         self.device = device
+        # Small competition noise breaks predictable openings without hurting
+        # strength much. Defaults are 0/0 = off; recommended: α=0.3, ε=0.05.
+        self.dirichlet_alpha = dirichlet_alpha
+        self.root_noise_epsilon = root_noise_epsilon
         self.agent: Optional[ChineseCheckersAgent] = None
 
         self.game_id = None
@@ -90,12 +96,22 @@ class CompetitionPlayer:
         if self.agent is not None:
             return
         ckpt = self._select_checkpoint(num_players)
-        print(f"Loading agent for {num_players}P: checkpoint={ckpt}, mcts_sims={self.mcts_simulations}")
+        noise_str = (
+            f"α={self.dirichlet_alpha}, ε={self.root_noise_epsilon}"
+            if self.dirichlet_alpha > 0 and self.root_noise_epsilon > 0
+            else "OFF"
+        )
+        print(
+            f"Loading agent for {num_players}P: checkpoint={ckpt}, "
+            f"mcts_sims={self.mcts_simulations}, root_noise={noise_str}"
+        )
         self.agent = ChineseCheckersAgent(
             checkpoint_path=ckpt,
             mcts_simulations=self.mcts_simulations,
             time_limit=self.time_limit,
             device=self.device,
+            dirichlet_alpha=self.dirichlet_alpha,
+            root_noise_epsilon=self.root_noise_epsilon,
         )
 
     def _is_repeating(self, pin_id: int, to_index: int) -> bool:
@@ -330,6 +346,17 @@ if __name__ == "__main__":
     parser.add_argument("--mcts-sims", type=int, default=20, help="MCTS simulations per move. 20 is the validated setting.")
     parser.add_argument("--time-limit", type=float, default=None)
     parser.add_argument("--device", default="cpu")
+    parser.add_argument(
+        "--dirichlet-alpha", type=float, default=0.3,
+        help="MCTS root Dirichlet noise alpha. Default 0.3 (used only when "
+             "epsilon > 0). AlphaZero standard.",
+    )
+    parser.add_argument(
+        "--root-noise-epsilon", type=float, default=0.05,
+        help="MCTS root noise mixing weight. Default 0.05 — small enough to "
+             "preserve play strength, large enough to break determinism so "
+             "opponents can't memorize our openings. Set to 0 to disable.",
+    )
     args = parser.parse_args()
 
     ckpts_by_players: Dict[int, str] = {}
@@ -347,5 +374,7 @@ if __name__ == "__main__":
         mcts_simulations=args.mcts_sims,
         time_limit=args.time_limit,
         device=args.device,
+        dirichlet_alpha=args.dirichlet_alpha,
+        root_noise_epsilon=args.root_noise_epsilon,
     )
     player.run()
