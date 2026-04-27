@@ -1402,4 +1402,18 @@ Value loss improved dramatically (0.88 → 0.29) but policy quality degraded at 
 
 **Decision:** Ship Phase 0b v1 (`checkpoints/phase_0b_v1/model_best.pt`) for the 2026-05-22 competition. Focus remaining time on competition parameter tuning (MCTS sims, Dirichlet noise, endgame BFS, time management).
 
+UPDATE: Decided to redo Phase 0 from scratch with the max_moves fix applied to supervised_bootstrap.py. The broken value head traces back to the hardcoded max_moves=300 in data generation — the teacher only got 50 moves/player in 6P, so the value targets were near-constant. With 150 moves/player the teacher reaches endgame, producing varied value targets that should train a real value head.
+
+---
+
+## [2026-04-27] Phase 0c: supervised bootstrap with fixed max_moves
+
+**Goal:** Redo Phase 0 from scratch with scaled max_moves so the value head gets meaningful training labels.
+
+**Fix:** `supervised_bootstrap.py` line 116: `max_moves=300` → `max_moves=150 * num_players`. Now 2P=300, 4P=600, 6P=900 — same as the RL pipeline.
+
+**Config:** 30,000 games (3.3× Phase 0b), 100 epochs (2× Phase 0b). No architecture changes.
+
+**Expected outcome:** value targets will show real variance (teacher reaches 8-10 pins in 4P instead of 4-5). Value head should learn position quality. If successful, MCTS with higher sims should actually improve play (unlike the sim-count pathology from Phase 0/0b).
+
 ---

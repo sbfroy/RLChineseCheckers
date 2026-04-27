@@ -113,7 +113,7 @@ def generate_games(num_games: int, encoder: BoardEncoder,
         teacher_is_first = (g // len(num_players_list)) % 2 == 0
         num_players = num_players_list[g % len(num_players_list)]
 
-        game = LocalGame(num_players=num_players, max_moves=300)
+        game = LocalGame(num_players=num_players, max_moves=150 * num_players)
         game.reset()
 
         teacher_colour = game.turn_order[0] if teacher_is_first else game.turn_order[-1]
