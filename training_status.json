@@ -1,48 +1,122 @@
 {
   "status": "finished",
-  "phase": "value_fix",
-  "run_name": "run_20260425_085340",
-  "config_file": "configs/phase1_value_fix.yaml",
-  "started_at": "2026-04-25T08:53:59.715376",
-  "finished_at": "2026-04-25T14:26:11.079870",
-  "pid": 329729,
-  "current_iteration": 30,
-  "total_iterations": 30,
+  "phase": "rl_refine",
+  "run_name": "phase1_v3_20260426_143010",
+  "config_file": "configs/phase1_v3.yaml",
+  "started_at": "2026-04-26T14:30:34.531699",
+  "finished_at": "2026-04-26T15:55:26.703523",
+  "pid": 688218,
+  "current_iteration": 10,
+  "total_iterations": 100,
   "latest_metrics": {
-    "policy_loss": 2.117616093158722,
-    "value_loss": 0.22377936244010926
+    "policy_loss": 0.5168924748897552,
+    "value_loss": 0.18785256445407866
   },
   "latest_eval": {
-    "random": {
-      "win_rate": 0.0,
-      "avg_score": 889.2,
-      "avg_game_length": 300.0,
-      "avg_game_time": 10.24,
-      "wins": 0,
-      "losses": 0,
-      "draws": 10,
-      "num_games": 10
+    "agg": {
+      "2p_vs_random": {
+        "games": 2,
+        "completed": 2,
+        "crashed": 0,
+        "rl_wins": 0,
+        "draws": 2,
+        "mean_rl_score": 1148.0,
+        "min_rl_score": 1097.0000000408284,
+        "max_rl_score": 1199.0000000408284,
+        "mean_rl_pins_in_goal": 8.5,
+        "mean_move_count": 300,
+        "mean_greedy_match_rate": 0.397,
+        "mean_heuristic_match_rate": 0.603,
+        "mean_stall_duration": 2,
+        "mean_endgame_active_count": 46.5
+      },
+      "2p_vs_greedy": {
+        "games": 2,
+        "completed": 2,
+        "crashed": 0,
+        "rl_wins": 0,
+        "draws": 2,
+        "mean_rl_score": 1098.0,
+        "min_rl_score": 1098.0000000408284,
+        "max_rl_score": 1098.0000000408284,
+        "mean_rl_pins_in_goal": 8,
+        "mean_move_count": 300,
+        "mean_greedy_match_rate": 0.787,
+        "mean_heuristic_match_rate": 1.0,
+        "mean_stall_duration": 189,
+        "mean_endgame_active_count": 96
+      },
+      "2p_vs_heuristic": {
+        "games": 2,
+        "completed": 2,
+        "crashed": 0,
+        "rl_wins": 0,
+        "draws": 2,
+        "mean_rl_score": 638.5,
+        "min_rl_score": 588.0000000408284,
+        "max_rl_score": 689.0000000408284,
+        "mean_rl_pins_in_goal": 3.5,
+        "mean_move_count": 300,
+        "mean_greedy_match_rate": 0.163,
+        "mean_heuristic_match_rate": 0.363,
+        "mean_stall_duration": 4,
+        "mean_endgame_active_count": 0
+      },
+      "2p_self_play": {
+        "games": 2,
+        "completed": 2,
+        "crashed": 0,
+        "rl_wins": 1,
+        "draws": 1,
+        "mean_rl_score": 1249.7,
+        "min_rl_score": 1199.0000000408284,
+        "max_rl_score": 1300.4111122905072,
+        "mean_rl_pins_in_goal": 9.5,
+        "mean_move_count": 218.5,
+        "mean_greedy_match_rate": 0.61,
+        "mean_heuristic_match_rate": 0.917,
+        "mean_stall_duration": 76.5,
+        "mean_endgame_active_count": 42
+      },
+      "4p_vs_greedy": {
+        "games": 2,
+        "completed": 2,
+        "crashed": 0,
+        "rl_wins": 0,
+        "draws": 2,
+        "mean_rl_score": 1097.2,
+        "min_rl_score": 1097.2493522087773,
+        "max_rl_score": 1097.2493522087773,
+        "mean_rl_pins_in_goal": 8,
+        "mean_move_count": 300,
+        "mean_greedy_match_rate": 0.867,
+        "mean_heuristic_match_rate": 1.0,
+        "mean_stall_duration": 163,
+        "mean_endgame_active_count": 41
+      },
+      "6p_vs_greedy": {
+        "games": 2,
+        "completed": 2,
+        "crashed": 0,
+        "rl_wins": 0,
+        "draws": 2,
+        "mean_rl_score": 836.0,
+        "min_rl_score": 680.9621544917135,
+        "max_rl_score": 990.9621544917135,
+        "mean_rl_pins_in_goal": 5.5,
+        "mean_move_count": 300,
+        "mean_greedy_match_rate": 0.46,
+        "mean_heuristic_match_rate": 0.66,
+        "mean_stall_duration": 17,
+        "mean_endgame_active_count": 0
+      }
     },
-    "greedy": {
-      "win_rate": 0.0,
-      "avg_score": 1098.0,
-      "avg_game_length": 300.0,
-      "avg_game_time": 11.1,
-      "wins": 0,
-      "losses": 0,
-      "draws": 10,
-      "num_games": 10
+    "gate_metrics": {
+      "self_play_pins": 9.5,
+      "4p_vs_greedy_pins": 8,
+      "2p_vs_heuristic_pins": 3.5,
+      "self_play_greedy_match_rate_neg": -0.61
     },
-    "heuristic": {
-      "win_rate": 0.0,
-      "avg_score": 316.7,
-      "avg_game_length": 300.0,
-      "avg_game_time": 9.73,
-      "wins": 0,
-      "losses": 0,
-      "draws": 10,
-      "num_games": 10
-    },
-    "avg_score": 768.0
+    "composite": 21.0
   }
 }
