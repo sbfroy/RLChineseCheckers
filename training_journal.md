@@ -1383,3 +1383,23 @@ python3.10 diagnose_play.py \
 **Unchanged:** max_moves_per_player=150, KL=0.3, lr=1e-4, all else from v4.
 
 ---
+
+## [2026-04-27] Phase 1 v5 post-mortem — RL refinement abandoned
+
+**Run:** `phase1_v5_20260427_115111` — auto-stopped at iteration 15.
+
+**Gate trigger:** self_play_pins=4.75 < threshold 6.0.
+
+**Trend across all three evals (iters 5/10/15):**
+- self_play_pins: 5.75 → 5.75 → 4.75 (declining)
+- 2p_vs_heuristic_pins: 7.75 → 6.25 → 6.0 (declining)
+- 4p_vs_greedy_pins: 8 → 8 → 8 (stable)
+- composite: 21.5 → 20.0 → 18.75 (monotonically declining)
+
+Value loss improved dramatically (0.88 → 0.29) but policy quality degraded at every eval. The RL training optimizes the loss function while making the agent play worse.
+
+**Conclusion after v3/v4/v5:** Phase 1 RL refinement does not improve Phase 0b. The fundamental problem is that MCTS self-play with a weak value head generates training data that is worse than the supervised Phase 0b policy. RL can only degrade what supervised learning built.
+
+**Decision:** Ship Phase 0b v1 (`checkpoints/phase_0b_v1/model_best.pt`) for the 2026-05-22 competition. Focus remaining time on competition parameter tuning (MCTS sims, Dirichlet noise, endgame BFS, time management).
+
+---
