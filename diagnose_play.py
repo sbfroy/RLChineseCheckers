@@ -76,10 +76,12 @@ def run_game(
     rl_agent: ChineseCheckersAgent,
     rl_seats: List[int],
     opponent_factory,
-    max_moves: int = 300,
+    max_moves: int = 0,
     log_baselines: bool = True,
 ) -> Dict[str, Any]:
     """Play one game; return a structured per-move log + final result."""
+    if max_moves <= 0:
+        max_moves = 150 * num_players
     game = LocalGame(num_players=num_players, max_moves=max_moves)
     game.reset()
 
@@ -437,7 +439,8 @@ def main():
         help="e.g. 2p_vs_greedy 4p_vs_heuristic 6p_self_play",
     )
     parser.add_argument("--games-per-matchup", type=int, default=3)
-    parser.add_argument("--max-moves", type=int, default=300)
+    parser.add_argument("--max-moves", type=int, default=0,
+                        help="0 = auto-scale (150 * num_players)")
     parser.add_argument("--out-dir", default=None,
                         help="defaults to logs/diagnostic/<timestamp>")
     parser.add_argument("--no-baselines", action="store_true",

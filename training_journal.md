@@ -1312,3 +1312,46 @@ python3.10 diagnose_play.py \
 **Command:** *(none — Phase 1 v3 design starts next; no run launches before user reviews the design)*
 
 ---
+
+## [2026-04-27] Phase 1 v3 post-mortem
+
+**Phase:** rl_refine (Phase 1 v3)
+**Run:** `phase1_v3_20260426_143010`
+
+**Outcome:** Auto-stopped at iteration 10 (of 100). Gate regression detected.
+
+**What happened:**
+- 100% of data-generation games hit the 300-move max (every single iteration)
+- Root cause: `max_moves=300` is a TOTAL move count, not per-player. In 6P games each player only got 50 turns; in 4P only 75. Not enough to finish.
+- The agent never reached endgame during training → value head learned from stalled trajectories → noise overwrote Phase 0b policy
+- 2p_vs_heuristic_pins collapsed: 7.0 (iter 5) → 3.5 (iter 10) — below the 5.3 auto-stop threshold
+- Self-play and 4P actually held or improved, but the heuristic matchup collapsed
+- KL anchor (0.1) slowed but didn't prevent the drift
+
+**Discovery:** The competition server has NO max_moves limit — games end by time or by winning. The 300-move limit was an arbitrary safety valve we added ourselves. It silently prevented the agent from ever seeing endgame during multi-player training.
+
+**Fix (Phase 1 v4):**
+- `max_moves_per_player: 150` → scales by num_players (2P=300, 4P=600, 6P=900)
+- KL anchor weight: 0.1 → 0.3 (stronger forgetting prevention)
+- Applied in self_play.py, diagnose_play.py, trainer.py, train.py
+
+---
+
+## [2026-04-27] Phase 1 v4 launch
+
+**Phase:** rl_refine (Phase 1 v4)
+**Config:** `configs/phase1_v4.yaml`
+
+**Changes from v3:**
+1. max_moves_per_player=150 (each player always gets 150 turns regardless of game size)
+2. KL anchor weight 0.3 (3× stronger than v3)
+3. diagnose_play.py also scales max_moves for eval games
+
+**Hypothesis:** With enough moves to finish, games will complete during data gen. The agent will finally see terminal rewards (win/loss) and learn endgame play. Stronger KL prevents the policy drift that killed v3.
+
+**What to watch in early iterations:**
+- `max_moves_pct` should drop below 1.0 (games actually finishing)
+- Policy loss should stay near Phase 0b's ~0.42 (KL anchor holding)
+- All gate metrics should hold above baseline
+
+---

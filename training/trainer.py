@@ -70,6 +70,7 @@ class TrainingConfig:
     gate_baseline: Optional[Dict[str, float]] = None
     gate_tolerance: float = 1.0
     gate_grace_iterations: int = 5  # don't auto-stop in the first N iters
+    max_moves_per_player: int = 150
 
 
 class Trainer:
@@ -250,7 +251,8 @@ class Trainer:
         )
         print(f"Starting training: {cfg.num_iterations} iterations")
         print(f"  Run: {cfg.run_name} -> {self.run_dir}")
-        print(f"  Self-play: {cfg.num_games_per_iteration} games/iter, players={np_str}")
+        print(f"  Self-play: {cfg.num_games_per_iteration} games/iter, players={np_str}, "
+              f"max_moves/player={cfg.max_moves_per_player}")
         print(f"  Training: batch={cfg.batch_size}, epochs={cfg.epochs_per_iteration}")
         print(f"  MCTS: {'enabled' if self.mcts else 'disabled'} ({cfg.mcts_simulations} sims)")
         print(f"  KL anchor: {'on' if self.anchor_model is not None else 'off'} "
@@ -285,6 +287,7 @@ class Trainer:
                 reward_config=self.reward_config,
                 device=cfg.device,
                 opponent=self.opponent,
+                max_moves_per_player=cfg.max_moves_per_player,
             )
             self.buffer.push_batch(experiences)
             sp_time = time.time() - iter_start

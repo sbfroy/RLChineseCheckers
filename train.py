@@ -95,6 +95,7 @@ def build_training_config(cfg: dict, args) -> TrainingConfig:
         gate_baseline=gate_baseline,
         gate_tolerance=tc.get("gate_tolerance", 1.0),
         gate_grace_iterations=tc.get("gate_grace_iterations", 5),
+        max_moves_per_player=tc.get("max_moves_per_player", 150),
     )
 
 

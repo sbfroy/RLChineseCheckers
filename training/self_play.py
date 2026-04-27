@@ -47,6 +47,7 @@ class SelfPlayWorker:
         mcts_simulations: int = 50,
         device: str = "cpu",
         opponent=None,
+        max_moves_per_player: int = 150,
     ):
         self.model = model
         self.encoder = encoder
@@ -64,6 +65,7 @@ class SelfPlayWorker:
         self.mcts_simulations = mcts_simulations
         self.device = device
         self.opponent = opponent
+        self.max_moves_per_player = max_moves_per_player
         self._last_game_length = None
         self._last_game_hit_max = False
 
@@ -84,7 +86,8 @@ class SelfPlayWorker:
         Returns list of Experience objects.
         """
         np_this_game = self._next_num_players()
-        game = LocalGame(num_players=np_this_game)
+        max_moves = self.max_moves_per_player * np_this_game
+        game = LocalGame(num_players=np_this_game, max_moves=max_moves)
         game.reset()
 
         # Determine which colour(s) the RL agent plays
@@ -276,6 +279,7 @@ def generate_self_play_data(
     reward_config: Optional[RewardConfig] = None,
     device: str = "cpu",
     opponent=None,
+    max_moves_per_player: int = 150,
 ) -> Tuple[List[Experience], Dict]:
     """
     Generate training data from self-play or vs-opponent games.
@@ -297,6 +301,7 @@ def generate_self_play_data(
         mcts_simulations=mcts_simulations,
         device=device,
         opponent=opponent,
+        max_moves_per_player=max_moves_per_player,
     )
 
     all_experiences = []
