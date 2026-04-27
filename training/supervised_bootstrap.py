@@ -2,16 +2,15 @@
 """
 Supervised imitation bootstrap for the Chinese Checkers policy-value network.
 
-Phase 0 of training. Generates games with HeuristicAgent as the "teacher"
-against a pool of opponents (Random, Greedy, stochastic-Heuristic) for
-state diversity. Collects (state, teacher_action, final_score/norm) triples
-and trains the network to imitate the teacher.
-
-Produces a network that plays roughly at heuristic level, which is a strong
-starting point for subsequent AlphaZero-style refinement.
+Phase 0 of training. Generates games between diverse agents and learns from
+ALL competent agents' moves (not just one teacher). Each agent's moves are
+labelled with that agent's own final competition score, so the network learns
+both what good play looks like (policy) and what scores different positions
+lead to (value).
 
 Usage:
-    python3.10 training/supervised_bootstrap.py --num-games 2000 --epochs 30 --device cuda
+    python3.10 training/supervised_bootstrap.py \
+      --num-games 50000 --epochs 150 --device cuda --run-name phase_0c_v1
 """
 
 import argparse
@@ -25,7 +24,7 @@ from datetime import datetime
 import numpy as np
 import torch
 import torch.nn.functional as F
-from torch.utils.data import TensorDataset, DataLoader
+from torch.utils.data import DataLoader, Subset, TensorDataset
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -55,161 +54,213 @@ class EpsilonHeuristicAgent:
         return self.inner.select_action(game, colour)
 
 
-def opp_factory_name(factory) -> str:
-    """Stable string label for a class or lambda factory used in opponent pool."""
-    if hasattr(factory, "__name__") and factory.__name__ != "<lambda>":
-        return factory.__name__
-    # Lambda → instantiate once and read the class name + epsilon if present.
-    inst = factory()
-    name = type(inst).__name__
-    if hasattr(inst, "epsilon"):
-        name += f"(ε={inst.epsilon})"
-    return name
+RECORDABLE_AGENTS = [
+    ("HeuristicAgent", HeuristicAgent),
+    ("GreedyProgress", GreedyProgressAgent),
+    ("MaxDistance", MaxDistanceAgent),
+    ("EpsHeuristic_0.15", lambda: EpsilonHeuristicAgent(epsilon=0.15)),
+]
+
+NON_RECORDABLE_AGENTS = [
+    ("Random", RandomAgent),
+    ("EpsHeuristic_0.30", lambda: EpsilonHeuristicAgent(epsilon=0.30)),
+]
+
+ALL_AGENTS = RECORDABLE_AGENTS + NON_RECORDABLE_AGENTS
+RECORDABLE_NAMES = {name for name, _ in RECORDABLE_AGENTS}
 
 
 def generate_games(num_games: int, encoder: BoardEncoder,
                    score_norm: float = 1300.0,
                    num_players_list: list = None,
+                   max_moves_per_player: int = 200,
+                   max_experiences: int = 1_500_000,
                    verbose: bool = True) -> dict:
     """
-    Play `num_games` games with HeuristicAgent as the teacher.
+    Play games between diverse agents. Moves from ALL competent agents are
+    recorded as training data. Each agent's value target is its own final
+    competition score / score_norm.
 
-    Teacher seat alternates between turn_order[0] and turn_order[-1] across
-    games. Player count cycles through `num_players_list` (round-robin) so
-    each player count gets equal coverage. **Every non-teacher seat samples
-    its opponent class independently from the pool** — in 4P/6P games this
-    gives the teacher much richer state distributions than the previous
-    "all opponents are the same class per game" setup did.
-
-    Only teacher moves are recorded as training examples. Each example is
-    labelled with the teacher's own final competition score at end of game.
+    Stops early if max_experiences is reached (for memory safety).
     """
     if num_players_list is None:
         num_players_list = [2, 4, 6]
-
-    teacher = HeuristicAgent()
-    # Diverse opponent pool. RandomAgent and GreedyProgressAgent are the
-    # extremes; MaxDistanceAgent has a different play style (max forward
-    # jump distance, not max distance reduction); two ε-Heuristic variants
-    # cover the "mostly-strong-with-some-noise" middle ground.
-    opponent_classes = [
-        RandomAgent,
-        GreedyProgressAgent,
-        MaxDistanceAgent,
-        lambda: EpsilonHeuristicAgent(epsilon=0.15),
-        lambda: EpsilonHeuristicAgent(epsilon=0.30),
-    ]
-    opponent_counts = {opp_factory_name(c): 0 for c in opponent_classes}
 
     spatial_buf = []
     scalars_buf = []
     mask_buf = []
     action_buf = []
-    value_placeholder = []  # filled in at end of each game
+    value_buf = []
+
+    seat_counts = {name: 0 for name, _ in ALL_AGENTS}
+    recorded_counts = {name: 0 for name, _ in RECORDABLE_AGENTS}
+    games_by_np = {np_: 0 for np_ in num_players_list}
+    games_finished = 0
+    total_generated = 0
 
     t0 = time.time()
 
     for g in range(num_games):
-        teacher_is_first = (g // len(num_players_list)) % 2 == 0
-        num_players = num_players_list[g % len(num_players_list)]
+        if len(action_buf) >= max_experiences:
+            if verbose:
+                print(f"  Experience cap reached ({max_experiences:,}) at game {g}.")
+            break
 
-        game = LocalGame(num_players=num_players, max_moves=150 * num_players)
+        num_players = num_players_list[g % len(num_players_list)]
+        max_moves = max_moves_per_player * num_players
+        game = LocalGame(num_players=num_players, max_moves=max_moves)
         game.reset()
 
-        teacher_colour = game.turn_order[0] if teacher_is_first else game.turn_order[-1]
         agents = {}
-        for c in game.turn_order:
-            if c == teacher_colour:
-                agents[c] = teacher
-            else:
-                opp_factory = py_random.choice(opponent_classes)
-                agents[c] = opp_factory()
-                opponent_counts[opp_factory_name(opp_factory)] += 1
+        agent_names = {}
 
-        indices_this_game = []
+        # First seat always gets a recordable agent (guarantees data per game).
+        first_colour = game.turn_order[0]
+        name, factory = py_random.choice(RECORDABLE_AGENTS)
+        agents[first_colour] = factory()
+        agent_names[first_colour] = name
+        seat_counts[name] += 1
+
+        # Remaining seats: sample from the full pool independently.
+        for colour in game.turn_order[1:]:
+            name, factory = py_random.choice(ALL_AGENTS)
+            agents[colour] = factory()
+            agent_names[colour] = name
+            seat_counts[name] += 1
+
+        # Track which colours we're recording (all recordable agents).
+        record_colours = {
+            c for c in game.turn_order if agent_names[c] in RECORDABLE_NAMES
+        }
+
+        # Per-colour buffers for this game: (spatial, scalars, mask, action)
+        game_data = {c: [] for c in record_colours}
 
         while not game.done:
             colour = game.current_colour()
-            agent = agents[colour]
-            is_teacher = colour == teacher_colour
+            recording = colour in record_colours
 
-            if is_teacher:
+            if recording:
                 spatial, scalars = encoder.encode_from_game(game, colour)
                 legal = game.get_legal_moves(colour)
                 mask = build_legal_mask(legal).numpy().astype(np.uint8)
 
             try:
-                pin_id, to_index = agent.select_action(game, colour)
+                pin_id, to_index = agents[colour].select_action(game, colour)
             except Exception:
                 break
 
-            if is_teacher:
+            if recording:
                 flat = action_to_flat(pin_id, to_index)
-                spatial_buf.append(spatial.numpy().astype(np.float32))
-                scalars_buf.append(scalars.numpy().astype(np.float32))
-                mask_buf.append(mask)
-                action_buf.append(flat)
-                indices_this_game.append(len(action_buf) - 1)
+                game_data[colour].append((
+                    spatial.numpy().astype(np.float32),
+                    scalars.numpy().astype(np.float32),
+                    mask,
+                    flat,
+                ))
 
             try:
                 _, done, _ = game.step(pin_id, to_index)
             except Exception:
                 break
 
-        # Assign final value target to all teacher states in this game
+        # Assign per-agent value targets from their own final scores.
         scores = game.compute_scores()
-        if teacher_colour in scores:
-            v = scores[teacher_colour]["final_score"] / score_norm
-        else:
-            v = 0.0
-        for _ in indices_this_game:
-            value_placeholder.append(v)
+        hit_max = game.move_count >= max_moves
+        if not hit_max:
+            games_finished += 1
+        games_by_np[num_players] = games_by_np.get(num_players, 0) + 1
 
-        if verbose and (g + 1) % 100 == 0:
+        for colour in record_colours:
+            moves = game_data[colour]
+            if not moves:
+                continue
+            if colour in scores:
+                v = scores[colour]["final_score"] / score_norm
+            else:
+                v = 0.0
+
+            for sp, sc, mk, act in moves:
+                spatial_buf.append(sp)
+                scalars_buf.append(sc)
+                mask_buf.append(mk)
+                action_buf.append(act)
+                value_buf.append(v)
+
+            recorded_counts[agent_names[colour]] = (
+                recorded_counts.get(agent_names[colour], 0) + len(moves)
+            )
+
+        total_generated = g + 1
+
+        if verbose and (g + 1) % 500 == 0:
             dt = time.time() - t0
-            print(f"  Generated {g+1}/{num_games} games "
-                  f"({len(action_buf):,} exps, {dt:.1f}s)")
+            mem_gb = len(action_buf) * 12822 / 1e9
+            print(f"  {g+1}/{num_games} games | "
+                  f"{len(action_buf):,} exps (~{mem_gb:.1f} GB) | "
+                  f"{dt:.0f}s | "
+                  f"finished: {games_finished}/{g+1}")
 
+    dt = time.time() - t0
     if verbose:
-        total_opp_seats = sum(opponent_counts.values()) or 1
-        print("  Opponent-seat distribution across all games:")
-        for name, n in sorted(opponent_counts.items()):
-            print(f"    {name:32s}  {n:6d}  ({100.0 * n / total_opp_seats:5.1f}%)")
+        print(f"\n  Completed {total_generated:,} games in {dt:.0f}s")
+        print(f"  Games that finished (not max_moves): "
+              f"{games_finished}/{total_generated} "
+              f"({100*games_finished/max(total_generated,1):.0f}%)")
+        print(f"  Games by player count: {games_by_np}")
+        print(f"\n  Seat distribution (total seats filled):")
+        total_seats = sum(seat_counts.values()) or 1
+        for name, n in sorted(seat_counts.items()):
+            print(f"    {name:28s}  {n:7d}  ({100*n/total_seats:5.1f}%)")
+        print(f"\n  Recorded experiences by agent type:")
+        for name, n in sorted(recorded_counts.items()):
+            print(f"    {name:28s}  {n:9,}")
 
     return {
         "spatial": np.stack(spatial_buf),
         "scalars": np.stack(scalars_buf),
         "mask": np.stack(mask_buf),
         "action": np.asarray(action_buf, dtype=np.int64),
-        "value": np.asarray(value_placeholder, dtype=np.float32),
+        "value": np.asarray(value_buf, dtype=np.float32),
     }
 
 
 def train_model(model, data, device, epochs, batch_size, lr, weight_decay,
                 value_loss_weight: float = 1.0, val_frac: float = 0.05):
-    """Train the policy-value net via supervised learning."""
+    """Train the policy-value net via supervised learning.
+
+    Uses Subset to avoid copying the full dataset during train/val split,
+    keeping peak memory close to 1× the dataset size.
+    """
     model.to(device)
 
     N = len(data["action"])
+
+    # Convert numpy → tensor once (shares memory via from_numpy, no copy).
+    all_spatial = torch.from_numpy(data["spatial"])
+    all_scalars = torch.from_numpy(data["scalars"])
+    all_mask = torch.from_numpy(data["mask"]).bool()
+    all_action = torch.from_numpy(data["action"])
+    all_value = torch.from_numpy(data["value"]).unsqueeze(-1)
+
+    # Free the numpy dict to reclaim memory.
+    del data
+
+    full_ds = TensorDataset(all_spatial, all_scalars, all_mask,
+                            all_action, all_value)
+
     n_val = max(1, int(N * val_frac))
-    perm = np.random.permutation(N)
-    val_idx = perm[:n_val]
-    train_idx = perm[n_val:]
+    perm = torch.randperm(N)
+    val_idx = perm[:n_val].tolist()
+    train_idx = perm[n_val:].tolist()
 
-    def to_tensors(idx):
-        return (
-            torch.from_numpy(data["spatial"][idx]),
-            torch.from_numpy(data["scalars"][idx]),
-            torch.from_numpy(data["mask"][idx]).bool(),
-            torch.from_numpy(data["action"][idx]),
-            torch.from_numpy(data["value"][idx]).unsqueeze(-1),
-        )
+    train_ds = Subset(full_ds, train_idx)
+    val_ds = Subset(full_ds, val_idx)
 
-    train_tensors = to_tensors(train_idx)
-    val_tensors = to_tensors(val_idx)
-    train_ds = TensorDataset(*train_tensors)
     train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True,
-                              drop_last=False)
+                              drop_last=False, num_workers=0)
+    val_loader = DataLoader(val_ds, batch_size=512, shuffle=False,
+                            num_workers=0)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr,
                                  weight_decay=weight_decay)
@@ -252,17 +303,14 @@ def train_model(model, data, device, epochs, batch_size, lr, weight_decay,
         model.eval()
         v_pol, v_val, v_n, v_correct = 0.0, 0.0, 0, 0
         with torch.no_grad():
-            vs_spatial, vs_scalars, vs_mask, vs_action, vs_value = val_tensors
-            bsz = 512
-            for i in range(0, len(vs_action), bsz):
-                s = slice(i, i + bsz)
+            for vs_spatial, vs_scalars, vs_mask, vs_action, vs_value in val_loader:
                 logits, v_pred = model(
-                    vs_spatial[s].to(device),
-                    vs_scalars[s].to(device),
-                    vs_mask[s].to(device),
+                    vs_spatial.to(device),
+                    vs_scalars.to(device),
+                    vs_mask.to(device),
                 )
-                act = vs_action[s].to(device)
-                val = vs_value[s].to(device)
+                act = vs_action.to(device)
+                val = vs_value.to(device)
                 v_pol += F.cross_entropy(logits, act, reduction='sum').item()
                 v_val += F.mse_loss(v_pred, val, reduction='sum').item()
                 v_correct += (logits.argmax(dim=-1) == act).sum().item()
@@ -325,9 +373,9 @@ def evaluate_agent_quick(model, device, num_games=5):
 
 def main():
     parser = argparse.ArgumentParser(description="Supervised imitation bootstrap")
-    parser.add_argument("--num-games", type=int, default=1000)
-    parser.add_argument("--epochs", type=int, default=30)
-    parser.add_argument("--batch-size", type=int, default=256)
+    parser.add_argument("--num-games", type=int, default=50000)
+    parser.add_argument("--epochs", type=int, default=150)
+    parser.add_argument("--batch-size", type=int, default=512)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--weight-decay", type=float, default=1e-4)
     parser.add_argument("--value-loss-weight", type=float, default=1.0)
@@ -338,6 +386,13 @@ def main():
     parser.add_argument("--eval-games", type=int, default=5)
     parser.add_argument("--score-norm", type=float, default=1300.0)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--max-moves-per-player", type=int, default=200,
+                        help="Max moves per player per game. 200 = generous; "
+                             "competition has no move limit.")
+    parser.add_argument("--max-experiences", type=int, default=1_500_000,
+                        help="Stop generating once this many experiences are "
+                             "collected. ~12.5 KB per experience. "
+                             "1.5M = ~19 GB RAM.")
     parser.add_argument(
         "--num-players",
         type=str,
@@ -371,11 +426,21 @@ def main():
     if args.device == "cuda":
         torch.cuda.manual_seed_all(args.seed)
 
-    print(f"=== Supervised bootstrap ===")
+    mem_est_gb = args.max_experiences * 12822 / 1e9
+    print(f"=== Supervised bootstrap (Phase 0c) ===")
     print(f"  Run: {args.run_name}")
-    print(f"  Games: {args.num_games} | Epochs: {args.epochs} | "
-          f"Batch: {args.batch_size} | Device: {args.device}")
-    print(f"  Player counts (cycled across games): {num_players_list}")
+    print(f"  Games: {args.num_games} (will stop early at "
+          f"{args.max_experiences:,} experiences)")
+    print(f"  Epochs: {args.epochs} | Batch: {args.batch_size} | "
+          f"Device: {args.device}")
+    print(f"  Player counts: {num_players_list}")
+    print(f"  Max moves/player: {args.max_moves_per_player} "
+          f"(2P={args.max_moves_per_player*2}, "
+          f"4P={args.max_moves_per_player*4}, "
+          f"6P={args.max_moves_per_player*6})")
+    print(f"  Memory budget: ~{mem_est_gb:.1f} GB for data")
+    print(f"  Recording moves from: "
+          f"{', '.join(n for n, _ in RECORDABLE_AGENTS)}")
 
     encoder = BoardEncoder()
 
@@ -385,10 +450,12 @@ def main():
         args.num_games, encoder,
         score_norm=args.score_norm,
         num_players_list=num_players_list,
+        max_moves_per_player=args.max_moves_per_player,
+        max_experiences=args.max_experiences,
     )
     gen_time = time.time() - t0
     print(
-        f"Generated {len(data['action']):,} experiences in {gen_time:.1f}s"
+        f"\nGenerated {len(data['action']):,} experiences in {gen_time:.0f}s"
     )
     print(
         f"  Value target: [{data['value'].min():.3f}, "
@@ -418,7 +485,7 @@ def main():
         value_loss_weight=args.value_loss_weight,
     )
     train_time = time.time() - t0
-    print(f"Trained {args.epochs} epochs in {train_time:.1f}s")
+    print(f"Trained {args.epochs} epochs in {train_time:.0f}s")
     if best_state is not None:
         print(f"  Best val_policy_loss at epoch {best_epoch} "
               f"(val_pol={history[best_epoch-1]['val_policy_loss']:.4f})")
@@ -446,15 +513,13 @@ def main():
     print(f"  Saved best (epoch {best_epoch if best_state else args.epochs}): "
           f"{ckpt_path}")
 
-    # Load best weights into the live model so eval reflects what we shipped.
+    # Load best weights for eval.
     if best_state is not None:
         model.load_state_dict(best_state)
 
     if args.eval_games > 0:
         print(f"\n=== Quick 2P sanity eval ({args.eval_games} games per opponent) ===")
-        print("  NOTE: 2P vs greedy hits the structural 1098 ceiling and 2P scores")
-        print("  in general DO NOT reflect 4P/6P / self-play strength. This is a")
-        print("  smoke check only — the real gate is diagnose_play.py, command below.")
+        print("  NOTE: 2P-only, doesn't reflect 4P/6P strength. Smoke check only.")
         eval_results = evaluate_agent_quick(
             model, args.device, num_games=args.eval_games,
         )
@@ -463,26 +528,21 @@ def main():
         eval_results = None
 
     print("\n=== GATE: run diagnose_play.py against this checkpoint ===")
-    print("  python3.10 diagnose_play.py \\")
+    print("  python3 diagnose_play.py \\")
     print(f"    --checkpoint {ckpt_path} \\")
     print(f"    --device {args.device} \\")
     print("    --mcts-sims 20 \\")
     print("    --temperature 0.1 \\")
-    print("    --matchups 2p_vs_random 2p_vs_greedy 2p_vs_heuristic 2p_self_play "
-          "4p_vs_greedy 6p_vs_greedy \\")
-    print("    --games-per-matchup 3")
-    print("  Pass criteria (ALL four required):")
-    print("    self-play pins ≥ 6 avg")
-    print("    4P-vs-greedy pins ≥ 4 avg")
-    print("    2P-vs-heuristic pins ≥ 6 avg")
-    print("    self-play greedy_match_rate < 0.5")
+    print("    --matchups 2p_vs_random 2p_vs_greedy 2p_vs_heuristic "
+          "2p_self_play 4p_vs_greedy 6p_vs_greedy \\")
+    print("    --games-per-matchup 4")
 
     metadata = {
         "run_name": args.run_name,
         "phase": "supervised_bootstrap",
         "started_at": datetime.now().isoformat(),
         "args": vars(args),
-        "num_experiences": int(len(data["action"])),
+        "num_experiences": int(len(data["action"])) if "action" in data else 0,
         "generation_seconds": round(gen_time, 1),
         "training_seconds": round(train_time, 1),
         "model_params": n_params,
