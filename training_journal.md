@@ -1355,3 +1355,31 @@ python3.10 diagnose_play.py \
 - All gate metrics should hold above baseline
 
 ---
+
+## [2026-04-27] Phase 1 v4 post-mortem
+
+**Run:** `phase1_v4_20260427_085013` — auto-stopped at iteration 5.
+
+**What happened:**
+- max_moves scaling IS applied (avg_game_length=600 = mean of 300/600/900), but games STILL don't finish. max_moves_pct ~1.0 across all iterations.
+- Root cause: 4P/6P congestion is structural. 40-60 pins on 121 cells means the last pins physically can't navigate through. No move limit increase fixes this — even 900 moves for 6P isn't enough.
+- Gate triggered at iteration 5: 2p_vs_heuristic_pins=5.0 < threshold 5.3. But with only 2 eval games this is extremely noisy (one game at 3 pins, one at 7 = avg 5).
+- Gate had zero effective grace: gate_grace=5 with eval_every=5 means the first eval IS the first gate check.
+- Value loss dropped 1.14 → 0.74 in 5 iterations — the value head WAS learning from shaped rewards even without terminal states. The run was killed too early.
+
+**Key insight:** 4P/6P games never finishing is not a bug — it's a property of the game. 2P self-play CAN finish (214 moves avg). Shaped rewards still provide signal from stalled games.
+
+---
+
+## [2026-04-27] Phase 1 v5 launch
+
+**Config:** `configs/phase1_v5.yaml`
+
+**Changes from v4:**
+1. gate_grace_iterations: 5 → 15 (3 evals before gate activates)
+2. games_per_matchup: 2 → 4 (less noisy gate measurements)
+3. MCTS sims for data gen: 50 → 25 (2P games more likely to finish; avoids value-head pathology)
+
+**Unchanged:** max_moves_per_player=150, KL=0.3, lr=1e-4, all else from v4.
+
+---
