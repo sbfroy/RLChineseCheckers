@@ -1412,8 +1412,100 @@ UPDATE: Decided to redo Phase 0 from scratch with the max_moves fix applied to s
 
 **Fix:** `supervised_bootstrap.py` line 116: `max_moves=300` → `max_moves=150 * num_players`. Now 2P=300, 4P=600, 6P=900 — same as the RL pipeline.
 
-**Config:** 30,000 games (3.3× Phase 0b), 100 epochs (2× Phase 0b). No architecture changes.
+**Config (planned):** 30,000 games, 100 epochs. No architecture changes.
+
+**Config (actual):** 50,000 games, 150 epochs, batch_size=512, max_moves_per_player=200, max_experiences=1,500,000. Ran ~17 hours on CUDA.
 
 **Expected outcome:** value targets will show real variance (teacher reaches 8-10 pins in 4P instead of 4-5). Value head should learn position quality. If successful, MCTS with higher sims should actually improve play (unlike the sim-count pathology from Phase 0/0b).
+
+---
+
+## [2026-04-29] Phase 0c v1 results + endgame solver + sim-count resolution
+
+**Run:** `phase_0c_v1` — supervised bootstrap, 50K games, 150 epochs, 1.5M experiences, 7.2M params.
+
+**Training metrics:**
+- Final policy loss: 0.895 (val: 1.016)
+- Final value loss: 0.0034 (val: 0.0035) — still low, but now with meaningful targets
+- Action accuracy: 72.2% (val: 69.0%)
+- Generation: 1,273s | Training: 60,727s (~17h total)
+
+**Post-training eval (sims=20, no endgame solver):**
+- vs random: 1137 avg score
+- vs greedy: 1098 avg score (the old structural ceiling)
+- vs heuristic: 1199 avg score
+
+### MCTS sim-count pathology: RESOLVED
+
+Tested sims=20/50/100 systematically via `diagnose_play.py`:
+
+| Matchup | sims=20 | sims=50 | sims=100 |
+|---|---|---|---|
+| 2p_vs_greedy | 10.0 pins | 10.0 | 10.0 |
+| 2p_vs_heuristic | 10.0 | 10.0 | 10.0 |
+| 2p_self_play | 7.0 | 7.0 | 9.0 |
+| 4p_vs_greedy | 5.25 | 6.0 | 6.8 |
+| 6p_vs_greedy | 5.25 | 5.2 | 6.0 |
+
+**Key finding:** sims=100 dramatically improves multi-player performance (4P: 5.25→6.8, 6P: 5.25→6.0, self-play: 7.0→9.0). The value head is providing real signal. This was THE root cause of all three Phase 1 RL failures — a broken value head made more MCTS search actively harmful.
+
+### Endgame solver improvements (2026-04-29)
+
+Three-layer fix for endgame stalling (pin stuck outside goal, oscillating):
+
+1. **BFS depth increased:** max_path_moves 12 → 50. The 121-cell board needs paths up to ~40 moves for the last pin navigating through congestion. BFS at depth 50 is still trivially fast.
+
+2. **Anti-oscillation bypass:** Added `last_was_endgame` flag to `ChineseCheckersAgent`. The anti-oscillation wrapper in `play.py` and `server_adapter.py` now skips the repetition check when the endgame solver chose the move — BFS is deterministic and always progresses.
+
+3. **Slide puzzle for blocked interior goals:** When the empty goal cell is surrounded by our own pins (unreachable from outside), the solver rearranges within the goal zone: slides an in-goal pin into the empty interior cell, freeing a border position the straggler can reach. Implemented in `EndgameSolver._slide_within_goal()`.
+
+4. **Activation threshold:** EndgameSolver default lowered from 8 to 7 (more empty goal cells = easier BFS). Agent constructor still overrides to 8.
+
+### 1098 structural ceiling: BROKEN
+
+The endgame improvements collectively broke the 2p_vs_greedy ceiling:
+- Before: 9/10 pins max, 1098.0 score (greedy's stranded pins block 2 goal cells)
+- After: **10/10 pins, 1300.7 score, 121 moves**
+
+The slide puzzle handles the case where greedy's pins occupy border goal cells and our own pins block the interior cell — it rearranges our pins to create an approach path.
+
+### Phase 0c v1 final diagnostic numbers (sims=100, with endgame solver)
+
+These are the baseline for any future training:
+
+| Matchup | Pins in goal | Score |
+|---|---|---|
+| 2p_vs_greedy | 10.0 | 1300.7 |
+| 2p_vs_heuristic | 10.0 | 1300.5 |
+| 2p_self_play | 9.0 | 1199.6 |
+| 4p_vs_greedy | 6.8 | 968.2 |
+| 6p_vs_greedy | 6.0 | 885.2 |
+
+---
+
+## [2026-04-29] Phase 1 v6 launch — RL refinement (attempt 4)
+
+**Config:** `configs/phase1_v6.yaml`
+
+**Why this time is different from v3/v4/v5:**
+1. **Value head works** — sims=100 improves play (proven). This was the root cause of ALL three previous failures. With a broken value head, MCTS self-play generated worse training data than the supervised policy.
+2. **max_moves_per_player=200** — matches Phase 0c supervised data. v5 used 150.
+3. **Endgame solver** — handles the stalling phase at competition time (not during data gen). The RL process focuses on mid-game improvement.
+4. **Stronger starting checkpoint** — Phase 0c: 10/10 2P, 6.8 4P, 6.0 6P (vs Phase 0b: ~8 2P, ~1 4P).
+
+**Changes from v5:**
+1. Resume & KL anchor: Phase 0c v1 (was Phase 0b v1)
+2. max_moves_per_player: 150 → 200
+3. MCTS sims (data gen): 25 → 50 (value head works, more sims = better training data)
+4. MCTS sims (eval): 20 → 50 (better signal)
+5. Gate baselines recalibrated: self_play=7.0, 4p_greedy=5.0, heuristic=8.0
+6. gate_grace_iterations: 15 → 20 (4 evals before gate)
+7. num_iterations: 100 → 50 (first pass; extend if improving)
+
+**What to watch:**
+- Composite score (sum of gate metrics) should stay above Phase 0c or improve
+- 4p_vs_greedy should hold ≥5 pins (currently 6.8 at sims=100; eval uses sims=50)
+- Policy loss should stay near Phase 0c's ~0.90 (KL anchor holding)
+- If gate triggers: Phase 0c is already competition-ready, no harm done
 
 ---
