@@ -61,7 +61,7 @@ class CompetitionPlayer:
         player_name: str = "RLAgent",
         checkpoint_path: Optional[str] = None,
         checkpoints_by_players: Optional[Dict[int, str]] = None,
-        mcts_simulations: int = 20,
+        mcts_simulations: int = 100,
         time_limit: Optional[float] = None,
         device: str = "cpu",
         dirichlet_alpha: float = 0.0,
@@ -343,7 +343,7 @@ if __name__ == "__main__":
     parser.add_argument("--checkpoint-2p", default=None, help="Checkpoint to use when the joined game has 2 players.")
     parser.add_argument("--checkpoint-4p", default=None, help="Checkpoint to use when the joined game has 4 players.")
     parser.add_argument("--checkpoint-6p", default=None, help="Checkpoint to use when the joined game has 6 players.")
-    parser.add_argument("--mcts-sims", type=int, default=20, help="MCTS simulations per move. 20 is the validated setting.")
+    parser.add_argument("--mcts-sims", type=int, default=100, help="MCTS simulations per move. 100 validated on Phase 0c (0.3s/move on CUDA).")
     parser.add_argument("--time-limit", type=float, default=None)
     parser.add_argument("--device", default="cpu")
     parser.add_argument(
