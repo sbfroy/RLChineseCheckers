@@ -95,7 +95,7 @@ class EndgameSolver:
     2026-04-25 entries).
     """
 
-    def __init__(self, activation_threshold: int = 8, max_path_moves: int = 12):
+    def __init__(self, activation_threshold: int = 8, max_path_moves: int = 50):
         self.activation_threshold = activation_threshold
         self.max_path_moves = max_path_moves
 
