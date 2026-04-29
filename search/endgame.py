@@ -3,20 +3,12 @@
 When most of our pins are already in goal, MCTS visits get noisy and the
 policy prior offers no signal to drag specific lagging pins through the
 narrow corridors that remain. This module replaces the network's choice
-with a deterministic per-pin BFS: each BFS edge is one full move
-(including chain-jumps, which the engine encodes as single legal
-destinations from `Pin.getPossibleMoves`), so a geographically long path
-can resolve in only a few turns.
+with a deterministic per-pin BFS.
 
-Opponent pins are treated as static for the duration of one BFS, and we
-re-plan every turn. That's strictly worse than full multi-pin
-coordination, but multi-pin coordination is a Chinese-Checkers-puzzle-hard
-search and re-planning closes most of the gap in practice.
-
-When all empty goal cells are surrounded by our own pins (no path exists),
-the solver performs a "gap shuffle": it temporarily moves an in-goal pin
-out to create an opening for the straggler, then re-planning on subsequent
-turns handles cleanup.
+When the empty goal cell is interior (surrounded by our pins, unreachable
+from outside), the solver rearranges within the goal zone: slide an
+in-goal pin into the empty interior cell, freeing a border position the
+straggler can reach. Like a slide puzzle.
 """
 
 from collections import deque
@@ -85,12 +77,6 @@ def _bfs_to_goal(
 
 
 class EndgameSolver:
-    """Pathfinds lagging pins into the goal zone.
-
-    Activation at 7 pins gives the BFS multiple empty goal cells to
-    target, reducing blocked-goal situations.
-    """
-
     def __init__(self, activation_threshold: int = 7, max_path_moves: int = 50):
         self.activation_threshold = activation_threshold
         self.max_path_moves = max_path_moves
@@ -131,6 +117,7 @@ class EndgameSolver:
 
         idx_to_pid: Dict[int, int] = {p.axialindex: p.id for p in my_pins}
 
+        # Try direct BFS for each lagging pin
         best: Optional[Tuple[int, int, int]] = None
         for pin in lagging:
             path = _bfs_to_goal(
@@ -147,11 +134,12 @@ class EndgameSolver:
             _, pin_id, first_move = best
             return (pin_id, first_move)
 
-        return self._gap_shuffle(
+        # No direct path — slide an in-goal pin deeper to free a border cell
+        return self._slide_within_goal(
             board, occupied, goal_cells, goal_targets, lagging, idx_to_pid
         )
 
-    def _gap_shuffle(
+    def _slide_within_goal(
         self,
         board,
         occupied: Set[int],
@@ -160,27 +148,22 @@ class EndgameSolver:
         lagging,
         idx_to_pid: Dict[int, int],
     ) -> Optional[Tuple[int, int]]:
-        """Move an in-goal pin out to create a path for a straggler.
-
-        For each of our pins sitting in the goal zone, check whether
-        stepping it to an empty neighbor would open a BFS path for any
-        lagging pin. Pick the shuffle that yields the shortest path.
-        """
+        """Slide an in-goal pin into the empty interior cell, freeing its
+        old (border) position for the straggler."""
         occupied_goal = goal_cells - goal_targets
-        index_of = board.index_of
-        best: Optional[Tuple[int, int, int]] = None  # (path_len, blocker_idx, step_out)
+        best: Optional[Tuple[int, int, int]] = None
 
-        for blocker_idx in occupied_goal:
-            if blocker_idx not in idx_to_pid:
+        for pin_idx in occupied_goal:
+            if pin_idx not in idx_to_pid:
                 continue
 
-            cell = board.cells[blocker_idx]
-            for dq, dr in _HEX_DIRS:
-                ni = index_of.get((cell.q + dq, cell.r + dr))
-                if ni is None or ni in occupied:
-                    continue
+            dests = _legal_destinations(board, pin_idx, occupied - {pin_idx})
+            for dest in dests:
+                if dest not in goal_targets:
+                    continue  # only slide within the goal zone
 
-                sim_occupied = (occupied - {blocker_idx}) | {ni}
+                # Simulate: pin slides from pin_idx to dest (both goal cells)
+                sim_occupied = (occupied | {dest}) - {pin_idx}
                 sim_targets = goal_cells - sim_occupied
                 if not sim_targets:
                     continue
@@ -191,7 +174,7 @@ class EndgameSolver:
                         sim_targets, self.max_path_moves,
                     )
                     if path is not None:
-                        score = (len(path), blocker_idx, ni)
+                        score = (len(path), pin_idx, dest)
                         if best is None or score < best:
                             best = score
                         break
@@ -199,5 +182,5 @@ class EndgameSolver:
         if best is None:
             return None
 
-        _, blocker_idx, step_out = best
-        return (idx_to_pid[blocker_idx], step_out)
+        _, pin_idx, dest = best
+        return (idx_to_pid[pin_idx], dest)
