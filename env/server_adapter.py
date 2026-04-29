@@ -278,8 +278,9 @@ class CompetitionPlayer:
             )
 
             # Break oscillation: if RL picks a repeated move, override
+            # (but never override endgame BFS — it's deterministic and always progresses)
             override = False
-            if self._is_repeating(pin_id, to_index):
+            if not getattr(self.agent, 'last_was_endgame', False) and self._is_repeating(pin_id, to_index):
                 pin_id, to_index = self._heuristic_move(
                     state.get("pins", {}), movable
                 )

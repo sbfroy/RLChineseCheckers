@@ -98,9 +98,11 @@ class ChineseCheckersAgent:
         If temperature is ~0, takes the argmax (deterministic, for
         competition play).
         """
+        self.last_was_endgame = False
         if self.endgame_solver is not None and self.endgame_solver.is_active(game, colour):
             move = self.endgame_solver.select_action(game, colour)
             if move is not None:
+                self.last_was_endgame = True
                 return move
 
         policy = self.mcts.search(game, colour, self.model, self.encoder)
@@ -157,6 +159,7 @@ class ChineseCheckersAgent:
 
         # Endgame solver runs in the canonical frame, then we rotate the
         # chosen action back. It bypasses MCTS entirely once the gate fires.
+        self.last_was_endgame = False
         if self.endgame_solver is not None:
             eg_game = LocalGame.from_server_state(
                 pin_positions=canon_positions,
@@ -168,6 +171,7 @@ class ChineseCheckersAgent:
                 move = self.endgame_solver.select_action(eg_game, canon_colour)
                 if move is not None:
                     canon_pin_id, canon_to_index = move
+                    self.last_was_endgame = True
                     return (
                         decanonicalize_pin_id(canon_pin_id, my_colour),
                         decanonicalize_to_index(canon_to_index, my_colour),

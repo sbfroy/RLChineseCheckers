@@ -46,6 +46,11 @@ class AntiOscillationWrapper:
     def select_action(self, game, colour):
         pin_id, to_idx = self.agent.select_action(game, colour)
 
+        if getattr(self.agent, 'last_was_endgame', False):
+            self.last_was_heuristic = False
+            self._recent.append((pin_id, to_idx))
+            return pin_id, to_idx
+
         if (pin_id, to_idx) in self._recent:
             pin_id, to_idx = self._heuristic(game, colour)
             self.last_was_heuristic = True
