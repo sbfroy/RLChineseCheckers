@@ -81,7 +81,7 @@ def run_game(
 ) -> Dict[str, Any]:
     """Play one game; return a structured per-move log + final result."""
     if max_moves <= 0:
-        max_moves = 150 * num_players
+        max_moves = 300 * num_players
     game = LocalGame(num_players=num_players, max_moves=max_moves)
     game.reset()
 
@@ -440,7 +440,7 @@ def main():
     )
     parser.add_argument("--games-per-matchup", type=int, default=3)
     parser.add_argument("--max-moves", type=int, default=0,
-                        help="0 = auto-scale (150 * num_players)")
+                        help="0 = auto-scale (300 * num_players)")
     parser.add_argument("--out-dir", default=None,
                         help="defaults to logs/diagnostic/<timestamp>")
     parser.add_argument("--no-baselines", action="store_true",
