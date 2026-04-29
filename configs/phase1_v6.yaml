@@ -29,7 +29,7 @@ model:
   value_hidden: 128
 
 training:
-  num_iterations: 50
+  num_iterations: 200
   num_games_per_iteration: 30
   num_players: "2,4,6"
   batch_size: 256
