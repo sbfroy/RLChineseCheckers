@@ -447,6 +447,10 @@ def main():
                         help="skip greedy/heuristic counterfactual queries (faster)")
     parser.add_argument("--no-endgame", action="store_true",
                         help="disable the endgame solver in the RL agent")
+    parser.add_argument("--c-puct", type=float, default=1.5,
+                        help="MCTS exploration constant (default: 1.5)")
+    parser.add_argument("--endgame-threshold", type=int, default=8,
+                        help="pins in goal to activate endgame solver (default: 8)")
     parser.add_argument("--dirichlet-alpha", type=float, default=0.0,
                         help="MCTS root Dirichlet noise alpha (0 = off)")
     parser.add_argument("--root-noise-epsilon", type=float, default=0.0,
@@ -473,16 +477,18 @@ def main():
     )
     print(f"Loading agent: {args.checkpoint} "
           f"(device={args.device}, mcts_sims={args.mcts_sims}, "
-          f"temperature={args.temperature}, "
-          f"endgame={'OFF' if args.no_endgame else 'ON'}, "
+          f"temperature={args.temperature}, c_puct={args.c_puct}, "
+          f"endgame={'OFF' if args.no_endgame else f'ON (threshold={args.endgame_threshold})'}, "
           f"root_noise={noise_str})")
 
     rl_agent = ChineseCheckersAgent(
         checkpoint_path=args.checkpoint,
         mcts_simulations=args.mcts_sims,
+        c_puct=args.c_puct,
         temperature=args.temperature,
         device=args.device,
         use_endgame=not args.no_endgame,
+        endgame_threshold=args.endgame_threshold,
         dirichlet_alpha=args.dirichlet_alpha,
         root_noise_epsilon=args.root_noise_epsilon,
     )
@@ -498,7 +504,9 @@ def main():
         "device": args.device,
         "mcts_sims": args.mcts_sims,
         "temperature": args.temperature,
+        "c_puct": args.c_puct,
         "use_endgame": not args.no_endgame,
+        "endgame_threshold": args.endgame_threshold,
         "dirichlet_alpha": args.dirichlet_alpha,
         "root_noise_epsilon": args.root_noise_epsilon,
         "matchups": [m[0] for m in matchups],
