@@ -1509,3 +1509,49 @@ These are the baseline for any future training:
 - If gate triggers: Phase 0c is already competition-ready, no harm done
 
 ---
+
+## [2026-05-02] Phase 1 v6 results — GATE TRIGGERED, RL abandoned permanently
+
+**Run completed:** 75 of 200 iterations (gate auto-stopped). Started 2026-04-29, stopped 2026-04-30.
+
+**Gate trigger:** self_play pins dropped to 5.75 at iteration 75, below floor of 6.0 (baseline 7.0 − tolerance 1.0).
+
+### Eval trajectory
+
+| Iter | Self-play | 4P greedy | 6P greedy | 2P greedy | 2P heuristic | Composite |
+|------|-----------|-----------|-----------|-----------|--------------|-----------|
+| 5    | 9.5       | **10.0**  | 7.75      | 10        | 10           | **29.5**  |
+| 10   | 9.0       | 7.5       | 6.0       | 10        | 10           | 26.5      |
+| 25   | 8.0       | 5.0       | 4.25      | 10        | 10           | 23.0      |
+| 40   | 9.5       | 9.0       | 3.25      | 10        | 10           | 28.5      |
+| 60   | 8.0       | 7.5       | 4.25      | 10        | 10           | 25.5      |
+| 75   | **5.75**  | 5.5       | 6.0       | 10        | 10           | **21.2**  |
+
+### Training loss trajectory
+
+| Iter | Policy loss | Value loss | Total loss |
+|------|-------------|------------|------------|
+| 1    | 0.85        | 1.03       | 1.88       |
+| 25   | 0.93        | 0.22       | 1.15       |
+| 50   | 1.28        | 0.21       | 1.48       |
+| 75   | **2.26**    | 0.20       | 2.46       |
+
+### Analysis
+
+**Same failure mode as v3/v4/v5:** Policy loss climbed monotonically (0.85 → 2.26) despite the value head fix. The KL anchor (weight=0.3) slowed degradation but did not prevent it. Value loss stabilized at ~0.20 (down from 1.03), confirming the value head learns, but the RL policy gradient signal still corrupts the policy.
+
+**Best checkpoint is iteration 5** (composite 29.5) — essentially untouched Phase 0c. By iteration 10, 4P already dropped from 10 to 7.5 pins.
+
+**Root cause hypothesis:** The RL training loop generates self-play data with MCTS (sims=50), trains on it with policy gradient + value loss, but the policy gradient signal is too noisy or poorly shaped for the complex multi-player game. The value head works for MCTS search guidance, but the RL update rule (cross-entropy against MCTS-improved policy) introduces more noise than signal, and the KL anchor can only slow — not prevent — the drift.
+
+### Decision: RL refinement permanently abandoned
+
+Four consecutive RL attempts (v3, v4, v5, v6) all showed the same monotonic policy degradation. The root cause changed between v3-v5 (broken value head) and v6 (RL signal quality), but the outcome is identical. **Phase 0c v1 is the competition model.**
+
+Remaining 20 days before competition (2026-05-22) should focus on:
+1. Competition parameter tuning (MCTS sims, temperature, endgame threshold)
+2. Endgame solver robustness testing
+3. Server integration verification
+4. Optionally: more/better supervised data (Phase 0d) if multi-player performance needs improvement
+
+---
