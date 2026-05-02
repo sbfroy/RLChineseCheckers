@@ -1540,18 +1540,39 @@ These are the baseline for any future training:
 
 **Same failure mode as v3/v4/v5:** Policy loss climbed monotonically (0.85 → 2.26) despite the value head fix. The KL anchor (weight=0.3) slowed degradation but did not prevent it. Value loss stabilized at ~0.20 (down from 1.03), confirming the value head learns, but the RL policy gradient signal still corrupts the policy.
 
-**Best checkpoint is iteration 5** (composite 29.5) — essentially untouched Phase 0c. By iteration 10, 4P already dropped from 10 to 7.5 pins.
+**Best checkpoint is iteration 5** (composite 29.5). By iteration 10, 4P already dropped from 10 to 7.5 pins.
 
 **Root cause hypothesis:** The RL training loop generates self-play data with MCTS (sims=50), trains on it with policy gradient + value loss, but the policy gradient signal is too noisy or poorly shaped for the complex multi-player game. The value head works for MCTS search guidance, but the RL update rule (cross-entropy against MCTS-improved policy) introduces more noise than signal, and the KL anchor can only slow — not prevent — the drift.
 
 ### Decision: RL refinement permanently abandoned
 
-Four consecutive RL attempts (v3, v4, v5, v6) all showed the same monotonic policy degradation. The root cause changed between v3-v5 (broken value head) and v6 (RL signal quality), but the outcome is identical. **Phase 0c v1 is the competition model.**
+Four consecutive RL attempts (v3, v4, v5, v6) all showed the same monotonic policy degradation. The root cause changed between v3-v5 (broken value head) and v6 (RL signal quality), but the outcome is identical.
 
 Remaining 20 days before competition (2026-05-22) should focus on:
 1. Competition parameter tuning (MCTS sims, temperature, endgame threshold)
 2. Endgame solver robustness testing
 3. Server integration verification
 4. Optionally: more/better supervised data (Phase 0d) if multi-player performance needs improvement
+
+---
+
+## [2026-05-02] Head-to-head: Phase 1 v6 best vs Phase 0c v1
+
+Ran `sweep_params.py --sweep mcts_sims --matchups 4p_vs_greedy 6p_vs_greedy` on `phase1_v6/model_best.pt` (the iteration 5 checkpoint) to check whether those early RL iterations helped.
+
+**Phase 1 v6 `model_best.pt` (5 games per config):**
+
+| Matchup | sims=50 | sims=100 | sims=200 |
+|---------|---------|----------|----------|
+| 4p_vs_greedy | 8.2 pins | 8.4 pins | 8.8 pins |
+| 6p_vs_greedy | 8.4 pins | 5.8 pins | 5.6 pins |
+
+**Phase 0c v1 baseline (sims=100):** 4P=6.8 pins, 6P=6.0 pins.
+
+**4P is genuinely better:** 8.4 vs 6.8 at sims=100, consistent across all three sim counts. The first 5 RL iterations improved multi-player play before degradation kicked in.
+
+**6P is high variance:** 8.4 at sims=50 but 5.8 at sims=100 — not a real signal with only 5 games.
+
+**Decision:** Use `phase1_v6/model_best.pt` as the competition model. It is at least as good as Phase 0c v1 and likely better at 4P. Full parameter sweep follows.
 
 ---
