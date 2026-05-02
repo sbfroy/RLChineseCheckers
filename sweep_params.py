@@ -90,7 +90,7 @@ def run_config(checkpoint, device, params, out_dir, matchups, games):
 
 def extract_scores(metadata):
     """Extract per-matchup pins and scores from metadata."""
-    agg = metadata.get("aggregate_metrics", {})
+    agg = metadata.get("aggregate", metadata.get("aggregate_metrics", {}))
     out = {}
     for matchup, m in agg.items():
         out[matchup] = {
@@ -109,7 +109,12 @@ def print_summary(results):
         print("No results to display.")
         return
 
-    all_matchups = MATCHUPS
+    seen = set()
+    for _, scores, _ in results:
+        seen.update(scores.keys())
+    all_matchups = [m for m in MATCHUPS if m in seen]
+    if not all_matchups:
+        all_matchups = sorted(seen)
     header = f"  {'config':<45s}"
     for m in all_matchups:
         short = m.replace("_vs_", "/").replace("2p_self_play", "2p/self")
