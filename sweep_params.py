@@ -40,7 +40,18 @@ SWEEPS = {
         (0.3, 0.10),
         (0.5, 0.05),
     ],
+    "comparison": "grid",
 }
+
+COMPARISON_GRID = [
+    {"c_puct": 1.0, "temperature": 0.0},
+    {"c_puct": 1.0, "temperature": 0.1},
+    {"c_puct": 1.0, "temperature": 0.3},
+    {"c_puct": 1.0, "temperature": 0.5},
+    {"c_puct": 1.0, "temperature": 0.5, "dirichlet_alpha": 0.3, "root_noise_epsilon": 0.05},
+    {"c_puct": 1.5, "temperature": 0.0},
+    {"c_puct": 1.5, "temperature": 0.5},
+]
 
 MATCHUPS = [
     "2p_vs_heuristic",
@@ -192,6 +203,30 @@ def main():
         print(f"\n{'#'*70}")
         print(f"# SWEEPING: {sweep_param}")
         print(f"{'#'*70}")
+
+        if SWEEPS[sweep_param] == "grid":
+            grid = COMPARISON_GRID
+            for overrides in grid:
+                params = dict(BASELINE)
+                params.update(overrides)
+                parts = [f"{k}={v}" for k, v in overrides.items()]
+                label = ", ".join(parts)
+
+                safe_label = label.replace(" ", "_").replace(",", "").replace("=", "")
+                out_dir = os.path.join(args.out_root, f"{config_idx:02d}_{safe_label}")
+                config_idx += 1
+
+                metadata, elapsed = run_config(
+                    args.checkpoint, args.device, params,
+                    out_dir, args.matchups, args.games_per_matchup,
+                )
+
+                if metadata is not None:
+                    scores = extract_scores(metadata)
+                    all_results.append((label, scores, elapsed))
+                else:
+                    all_results.append((label, {}, elapsed))
+            continue
 
         values = SWEEPS[sweep_param]
 
