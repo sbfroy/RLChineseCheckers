@@ -363,6 +363,15 @@ if __name__ == "__main__":
     parser.add_argument("--time-limit", type=float, default=None)
     parser.add_argument("--device", default="cpu")
     parser.add_argument(
+        "--host", default=HOST,
+        help=f"Game server host (default: {HOST}). Set to the tournament "
+             "server's address when connecting to a remote game.",
+    )
+    parser.add_argument(
+        "--port", type=int, default=PORT,
+        help=f"Game server port (default: {PORT}).",
+    )
+    parser.add_argument(
         "--dirichlet-alpha", type=float, default=0.0,
         help="MCTS root Dirichlet noise alpha. Default 0.0 (off) — temperature "
              "0.3 already provides decorrelation; sweep showed noise hurt "
@@ -374,6 +383,9 @@ if __name__ == "__main__":
              "alpha and epsilon > 0 to enable.",
     )
     args = parser.parse_args()
+
+    HOST = args.host
+    PORT = args.port
 
     ckpts_by_players: Dict[int, str] = {}
     if args.checkpoint_2p:
