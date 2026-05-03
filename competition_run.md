@@ -7,13 +7,20 @@ How to connect the trained agent to the course's game server. Used for the
 
 ## What you have
 
-- **Game server** (`game.py`) — provided by the course. Exposes JSON-RPC on a
-  TCP port (default `127.0.0.1:50555`). Started by the instructor or by you
-  in a separate terminal for local self-tests.
+- **Game server** (`game.py`) — **NOT in this repo.** Distributed by the
+  course (Canvas / course Git repo / instructor). Exposes JSON-RPC on a
+  TCP port (default `127.0.0.1:50555`). For the tournament, the instructor
+  will host it; for a local self-test you need to drop their `game.py` into
+  this directory.
 - **Player client** (`env/server_adapter.py`) — your code. Connects to the
   server, joins as a player, and uses your trained checkpoint to pick moves.
 - **Checkpoint** — `checkpoints/phase1_v6/model_best.pt` on the school
   machine.
+
+If you don't have `game.py`, skip to
+["Local-only smoke test (no game.py needed)"](#local-only-smoke-test-no-gamepy-needed)
+below to at least confirm the agent plays correctly against the bundled
+heuristic baseline.
 
 The competition parameters (`c_puct=1.0`, `temperature=0.3`, `mcts-sims=100`)
 are baked in as defaults in `env/server_adapter.py`, so the launch command
@@ -87,8 +94,9 @@ The instructor will share the host/port for the test run.
 
 ## Smoke test before showing up to the test run
 
-Run a single 2P game against yourself to confirm everything works
-end-to-end. Three terminals on the school machine:
+### Option A — full JSON-RPC self-test (requires `game.py`)
+
+Drop the course's `game.py` into this directory, then use three terminals:
 
 **Terminal 1 — server:**
 
@@ -128,6 +136,36 @@ What to verify:
 - Game finishes with `=== GAME FINISHED ===` and a score table.
 
 If any of these fail, fix before tomorrow.
+
+### Local-only smoke test (no `game.py` needed)
+
+This skips the JSON-RPC layer but exercises the trained agent end-to-end
+against the bundled greedy/heuristic opponents. Good enough to confirm
+the checkpoint loads, MCTS runs, and the agent plays reasonable moves.
+
+```bash
+python3 play.py watch \
+  --checkpoint checkpoints/phase1_v6/model_best.pt \
+  --opponent greedy \
+  --mcts-sims 100 \
+  --device cuda \
+  --delay 0.1
+```
+
+You'll see an ASCII board update each move. Expected: the agent moves
+its pins steadily toward the opposite corner and finishes a 2P game in
+~120–180 moves. If it stalls, oscillates, or fails to load the
+checkpoint, fix before the real test run.
+
+For multi-player practice (since the tournament uses 2/4/6 players):
+
+```bash
+python3 validate_multiplayer.py \
+  --checkpoint checkpoints/phase1_v6/model_best.pt \
+  --device cuda \
+  --mcts-sims 100 \
+  --players 2 4 6
+```
 
 ---
 
