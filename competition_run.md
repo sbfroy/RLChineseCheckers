@@ -7,20 +7,14 @@ How to connect the trained agent to the course's game server. Used for the
 
 ## What you have
 
-- **Game server** (`game.py`) — **NOT in this repo.** Distributed by the
-  course (Canvas / course Git repo / instructor). Exposes JSON-RPC on a
-  TCP port (default `127.0.0.1:50555`). For the tournament, the instructor
-  will host it; for a local self-test you need to drop their `game.py` into
-  this directory.
+- **Game server** (`game.py`) — at `multi system single machine minimal/game.py`
+  in this repo. Exposes JSON-RPC on TCP port `50555`. For the tournament,
+  the instructor hosts it on their machine; for a local self-test you can
+  run it yourself.
 - **Player client** (`env/server_adapter.py`) — your code. Connects to the
   server, joins as a player, and uses your trained checkpoint to pick moves.
 - **Checkpoint** — `checkpoints/phase1_v6/model_best.pt` on the school
   machine.
-
-If you don't have `game.py`, skip to
-["Local-only smoke test (no game.py needed)"](#local-only-smoke-test-no-gamepy-needed)
-below to at least confirm the agent plays correctly against the bundled
-heuristic baseline.
 
 The competition parameters (`c_puct=1.0`, `temperature=0.3`, `mcts-sims=100`)
 are baked in as defaults in `env/server_adapter.py`, so the launch command
@@ -50,7 +44,7 @@ Two terminals on the school machine:
 **Terminal 1 — start the course's game server:**
 
 ```bash
-python3 game.py
+python3 "multi system single machine minimal/game.py"
 ```
 
 Type `Create` + Enter to create a game.
@@ -94,14 +88,14 @@ The instructor will share the host/port for the test run.
 
 ## Smoke test before showing up to the test run
 
-### Option A — full JSON-RPC self-test (requires `game.py`)
+### Option A — full JSON-RPC self-test
 
-Drop the course's `game.py` into this directory, then use three terminals:
+Three terminals on the school machine:
 
 **Terminal 1 — server:**
 
 ```bash
-python3 game.py
+python3 "multi system single machine minimal/game.py"
 ```
 
 Type `Create`, accept defaults until a game with 2 players is set up.
@@ -137,11 +131,11 @@ What to verify:
 
 If any of these fail, fix before tomorrow.
 
-### Local-only smoke test (no `game.py` needed)
+### Option B — local play simulator (no JSON-RPC)
 
 This skips the JSON-RPC layer but exercises the trained agent end-to-end
-against the bundled greedy/heuristic opponents. Good enough to confirm
-the checkpoint loads, MCTS runs, and the agent plays reasonable moves.
+against the bundled greedy/heuristic opponents. Useful as a quick health
+check before the full self-test.
 
 ```bash
 python3 play.py watch \
