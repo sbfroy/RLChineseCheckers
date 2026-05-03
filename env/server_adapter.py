@@ -62,6 +62,8 @@ class CompetitionPlayer:
         checkpoint_path: Optional[str] = None,
         checkpoints_by_players: Optional[Dict[int, str]] = None,
         mcts_simulations: int = 100,
+        c_puct: float = 1.0,
+        temperature: float = 0.3,
         time_limit: Optional[float] = None,
         device: str = "cpu",
         dirichlet_alpha: float = 0.0,
@@ -71,10 +73,10 @@ class CompetitionPlayer:
         self.checkpoint_path = checkpoint_path
         self.checkpoints_by_players = checkpoints_by_players or {}
         self.mcts_simulations = mcts_simulations
+        self.c_puct = c_puct
+        self.temperature = temperature
         self.time_limit = time_limit
         self.device = device
-        # Small competition noise breaks predictable openings without hurting
-        # strength much. Defaults are 0/0 = off; recommended: α=0.3, ε=0.05.
         self.dirichlet_alpha = dirichlet_alpha
         self.root_noise_epsilon = root_noise_epsilon
         self.agent: Optional[ChineseCheckersAgent] = None
@@ -103,11 +105,14 @@ class CompetitionPlayer:
         )
         print(
             f"Loading agent for {num_players}P: checkpoint={ckpt}, "
-            f"mcts_sims={self.mcts_simulations}, root_noise={noise_str}"
+            f"mcts_sims={self.mcts_simulations}, c_puct={self.c_puct}, "
+            f"temperature={self.temperature}, root_noise={noise_str}"
         )
         self.agent = ChineseCheckersAgent(
             checkpoint_path=ckpt,
             mcts_simulations=self.mcts_simulations,
+            c_puct=self.c_puct,
+            temperature=self.temperature,
             time_limit=self.time_limit,
             device=self.device,
             dirichlet_alpha=self.dirichlet_alpha,
@@ -345,18 +350,28 @@ if __name__ == "__main__":
     parser.add_argument("--checkpoint-4p", default=None, help="Checkpoint to use when the joined game has 4 players.")
     parser.add_argument("--checkpoint-6p", default=None, help="Checkpoint to use when the joined game has 6 players.")
     parser.add_argument("--mcts-sims", type=int, default=100, help="MCTS simulations per move. 100 validated on Phase 0c (0.3s/move on CUDA).")
+    parser.add_argument(
+        "--c-puct", type=float, default=1.0,
+        help="MCTS exploration constant. Competition default 1.0 (winner of "
+             "phase1_v6 sweep — improves 6P play vs 1.5).",
+    )
+    parser.add_argument(
+        "--temperature", type=float, default=0.3,
+        help="Action sampling temperature. Competition default 0.3 (winner of "
+             "comparison grid — best 6P pins=8.6 with c_puct=1.0).",
+    )
     parser.add_argument("--time-limit", type=float, default=None)
     parser.add_argument("--device", default="cpu")
     parser.add_argument(
-        "--dirichlet-alpha", type=float, default=0.3,
-        help="MCTS root Dirichlet noise alpha. Default 0.3 (used only when "
-             "epsilon > 0). AlphaZero standard.",
+        "--dirichlet-alpha", type=float, default=0.0,
+        help="MCTS root Dirichlet noise alpha. Default 0.0 (off) — temperature "
+             "0.3 already provides decorrelation; sweep showed noise hurt "
+             "slightly on top of it.",
     )
     parser.add_argument(
-        "--root-noise-epsilon", type=float, default=0.05,
-        help="MCTS root noise mixing weight. Default 0.05 — small enough to "
-             "preserve play strength, large enough to break determinism so "
-             "opponents can't memorize our openings. Set to 0 to disable.",
+        "--root-noise-epsilon", type=float, default=0.0,
+        help="MCTS root noise mixing weight. Default 0.0 (off). Set both "
+             "alpha and epsilon > 0 to enable.",
     )
     args = parser.parse_args()
 
@@ -373,6 +388,8 @@ if __name__ == "__main__":
         checkpoint_path=args.checkpoint,
         checkpoints_by_players=ckpts_by_players,
         mcts_simulations=args.mcts_sims,
+        c_puct=args.c_puct,
+        temperature=args.temperature,
         time_limit=args.time_limit,
         device=args.device,
         dirichlet_alpha=args.dirichlet_alpha,

@@ -1576,3 +1576,51 @@ Ran `sweep_params.py --sweep mcts_sims --matchups 4p_vs_greedy 6p_vs_greedy` on 
 **Decision:** Use `phase1_v6/model_best.pt` as the competition model. It is at least as good as Phase 0c v1 and likely better at 4P. Full parameter sweep follows.
 
 ---
+
+## [2026-05-02] Full parameter sweep on phase1_v6/model_best.pt
+
+Ran `sweep_params.py` covering mcts_sims, temperature, c_puct, endgame_threshold, and noise. 17 configs, 5 games per matchup × 4 matchups.
+
+**Highlights (pins, total across 4 matchups, max=40):**
+
+| config | 2p/heur | 2p/self | 4p/grdy | 6p/grdy | total |
+|---|---|---|---|---|---|
+| baseline (sims=100, c=1.5, T=0.1) | 10.0 | 9.4 | 10.0 | 5.2 | 34.6 |
+| **c_puct=1.0** | **10.0** | **9.2** | **10.0** | **7.6** | **36.8** |
+| temperature=0.5 | 10.0 | 8.4 | 9.8 | 7.6 | 35.8 |
+| sims=200 | 10.0 | 9.0 | 9.0 | 5.8 | 33.8 |
+| noise α=0.3, ε=0.05 | 10.0 | 9.2 | 8.8 | 6.4 | 34.4 |
+
+Lower c_puct (1.0) was the clear winner — improved 6P from 5.6→7.6 pins while maintaining 4P at 10.0. Higher temperature (0.5) also independently helped 6P. Noise didn't help. Sims=200 didn't beat sims=100.
+
+---
+
+## [2026-05-02] Comparison grid: c_puct × temperature
+
+Followed up with a focused 7-config grid mixing the two winning levers.
+
+| config | 2p/h | 2p/s | 4p/g | 6p/g | tot | wins |
+|---|---|---|---|---|---|---|
+| c=1.0, T=0.0 | 10.0 | 9.0 | 10.0 | 5.0 | 34.0 | 15 |
+| c=1.0, T=0.1 | 10.0 | 9.6 | 8.0 | 6.2 | 33.8 | 12 |
+| **c=1.0, T=0.3** | **10.0** | **9.6** | **9.8** | **8.6** | **38.0** | **17** |
+| c=1.0, T=0.5 | 8.8 | 9.8 | 9.0 | 5.8 | 33.4 | 11 |
+| c=1.0, T=0.5, α=0.3, ε=0.05 | 9.4 | 8.8 | 8.6 | 6.8 | 33.6 | 12 |
+| c=1.5, T=0.0 | 10.0 | 9.0 | 10.0 | 6.0 | 35.0 | 15 |
+| c=1.5, T=0.5 | 10.0 | 9.2 | 7.6 | 8.6 | 35.4 | 13 |
+
+`c_puct=1.0, temperature=0.3` is the top config — best total (38.0), best 6P (8.6), 17/20 wins. Two independent configs hit 6P=8.6 (c=1.0/T=0.3 and c=1.5/T=0.5) while every deterministic config stays at 5–6 pins, suggesting some temperature genuinely helps 6P escape stuck positions, not just luck.
+
+5-game variance is significant (same `c=1.0/T=0.1` row swung from 4P=10.0 in the first sweep to 4P=8.0 here), but the qualitative pattern — low c_puct + small but nonzero temperature — is consistent across both sweeps.
+
+### Decision: lock competition params
+
+- **Checkpoint:** `checkpoints/phase1_v6/model_best.pt`
+- **MCTS sims:** 100
+- **c_puct:** 1.0
+- **temperature:** 0.3
+- **Dirichlet noise:** off (α=0, ε=0) — temperature alone provides decorrelation; noise hurt slightly in the sweep
+
+These are now the defaults in `env/server_adapter.py`, so the launch command only needs `--checkpoint` and `--device`.
+
+---
