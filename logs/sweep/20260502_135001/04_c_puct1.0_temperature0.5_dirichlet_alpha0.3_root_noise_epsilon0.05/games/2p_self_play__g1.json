@@ -1,0 +1,4311 @@
+{
+  "game_id": "2p_self_play__g1",
+  "matchup": "2p_self_play",
+  "num_players": 2,
+  "rl_colours": [
+    "red",
+    "blue"
+  ],
+  "seat_assignments": {
+    "red": "rl",
+    "blue": "rl"
+  },
+  "completed": true,
+  "crash": null,
+  "winner": "blue",
+  "status": "FINISHED",
+  "move_count": 150,
+  "initial_state": {
+    "red": {
+      "pins_in_goal": 0,
+      "pins_in_home": 10,
+      "total_distance": 110,
+      "max_distance": 13,
+      "min_distance": 10
+    },
+    "blue": {
+      "pins_in_goal": 0,
+      "pins_in_home": 10,
+      "total_distance": 110,
+      "max_distance": 13,
+      "min_distance": 10
+    }
+  },
+  "final_pins": {
+    "red": [
+      1,
+      6,
+      26,
+      9,
+      13,
+      4,
+      0,
+      37,
+      7,
+      3
+    ],
+    "blue": [
+      119,
+      118,
+      111,
+      120,
+      116,
+      117,
+      115,
+      113,
+      112,
+      114
+    ]
+  },
+  "scores": {
+    "red": {
+      "final_score": 993.2493522087773,
+      "time_score": 100.0,
+      "move_score": 0.24935220877729622,
+      "pin_goal_score": 700.0,
+      "distance_score": 193.0,
+      "pins_in_goal": 7,
+      "total_distance": 7,
+      "moves": 75
+    },
+    "blue": {
+      "final_score": 1300.2493522087773,
+      "time_score": 100.0,
+      "move_score": 0.24935220877729622,
+      "pin_goal_score": 1000.0,
+      "distance_score": 200.0,
+      "pins_in_goal": 10,
+      "total_distance": 0,
+      "moves": 75
+    }
+  },
+  "rl_diagnostics": {
+    "red": {
+      "moves": 75,
+      "last_progress_turn": 113,
+      "stall_duration": 37,
+      "greedy_match_rate": null,
+      "heuristic_match_rate": null,
+      "avg_legal_count": 46.1,
+      "endgame_active_count": 0
+    },
+    "blue": {
+      "moves": 75,
+      "last_progress_turn": 150,
+      "stall_duration": 0,
+      "greedy_match_rate": null,
+      "heuristic_match_rate": null,
+      "avg_legal_count": 46.7,
+      "endgame_active_count": 5
+    }
+  },
+  "rl_latency": {
+    "moves": 150,
+    "avg_s": 0.3195,
+    "p95_s": 0.3828,
+    "max_s": 0.4448
+  },
+  "moves": [
+    {
+      "turn": 1,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 14,
+      "endgame_active": false,
+      "pin_id": 4,
+      "from_index": 115,
+      "to_index": 102,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 10,
+        "total_distance": 110,
+        "max_distance": 13,
+        "min_distance": 10
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 9,
+        "total_distance": 108,
+        "max_distance": 13,
+        "min_distance": 9
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.311
+    },
+    {
+      "turn": 2,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 14,
+      "endgame_active": false,
+      "pin_id": 3,
+      "from_index": 3,
+      "to_index": 14,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 10,
+        "total_distance": 110,
+        "max_distance": 13,
+        "min_distance": 10
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 9,
+        "total_distance": 108,
+        "max_distance": 13,
+        "min_distance": 9
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3497
+    },
+    {
+      "turn": 3,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 26,
+      "endgame_active": false,
+      "pin_id": 9,
+      "from_index": 120,
+      "to_index": 104,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 9,
+        "total_distance": 108,
+        "max_distance": 13,
+        "min_distance": 9
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 8,
+        "total_distance": 104,
+        "max_distance": 12,
+        "min_distance": 9
+      },
+      "dist_improvement": 4,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.408
+    },
+    {
+      "turn": 4,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 26,
+      "endgame_active": false,
+      "pin_id": 0,
+      "from_index": 0,
+      "to_index": 16,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 9,
+        "total_distance": 108,
+        "max_distance": 13,
+        "min_distance": 9
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 8,
+        "total_distance": 104,
+        "max_distance": 12,
+        "min_distance": 9
+      },
+      "dist_improvement": 4,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3243
+    },
+    {
+      "turn": 5,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 32,
+      "endgame_active": false,
+      "pin_id": 0,
+      "from_index": 111,
+      "to_index": 89,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 8,
+        "total_distance": 104,
+        "max_distance": 12,
+        "min_distance": 9
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 7,
+        "total_distance": 102,
+        "max_distance": 12,
+        "min_distance": 8
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3162
+    },
+    {
+      "turn": 6,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 32,
+      "endgame_active": false,
+      "pin_id": 4,
+      "from_index": 4,
+      "to_index": 13,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 8,
+        "total_distance": 104,
+        "max_distance": 12,
+        "min_distance": 9
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 7,
+        "total_distance": 102,
+        "max_distance": 12,
+        "min_distance": 9
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3142
+    },
+    {
+      "turn": 7,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 37,
+      "endgame_active": false,
+      "pin_id": 5,
+      "from_index": 116,
+      "to_index": 78,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 7,
+        "total_distance": 102,
+        "max_distance": 12,
+        "min_distance": 8
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 6,
+        "total_distance": 98,
+        "max_distance": 12,
+        "min_distance": 7
+      },
+      "dist_improvement": 4,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3439
+    },
+    {
+      "turn": 8,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 39,
+      "endgame_active": false,
+      "pin_id": 5,
+      "from_index": 5,
+      "to_index": 18,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 7,
+        "total_distance": 102,
+        "max_distance": 12,
+        "min_distance": 9
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 6,
+        "total_distance": 100,
+        "max_distance": 12,
+        "min_distance": 9
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3552
+    },
+    {
+      "turn": 9,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 47,
+      "endgame_active": false,
+      "pin_id": 0,
+      "from_index": 89,
+      "to_index": 68,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 6,
+        "total_distance": 98,
+        "max_distance": 12,
+        "min_distance": 7
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 6,
+        "total_distance": 96,
+        "max_distance": 12,
+        "min_distance": 6
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.4192
+    },
+    {
+      "turn": 10,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 48,
+      "endgame_active": false,
+      "pin_id": 6,
+      "from_index": 6,
+      "to_index": 26,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 6,
+        "total_distance": 100,
+        "max_distance": 12,
+        "min_distance": 9
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 5,
+        "total_distance": 98,
+        "max_distance": 12,
+        "min_distance": 8
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3908
+    },
+    {
+      "turn": 11,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 45,
+      "endgame_active": false,
+      "pin_id": 1,
+      "from_index": 112,
+      "to_index": 92,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 6,
+        "total_distance": 96,
+        "max_distance": 12,
+        "min_distance": 6
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 5,
+        "total_distance": 94,
+        "max_distance": 12,
+        "min_distance": 6
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3363
+    },
+    {
+      "turn": 12,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 50,
+      "endgame_active": false,
+      "pin_id": 3,
+      "from_index": 14,
+      "to_index": 37,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 5,
+        "total_distance": 98,
+        "max_distance": 12,
+        "min_distance": 8
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 5,
+        "total_distance": 96,
+        "max_distance": 12,
+        "min_distance": 7
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3294
+    },
+    {
+      "turn": 13,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 46,
+      "endgame_active": false,
+      "pin_id": 2,
+      "from_index": 113,
+      "to_index": 91,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 5,
+        "total_distance": 94,
+        "max_distance": 12,
+        "min_distance": 6
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 4,
+        "total_distance": 92,
+        "max_distance": 12,
+        "min_distance": 6
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3602
+    },
+    {
+      "turn": 14,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 50,
+      "endgame_active": false,
+      "pin_id": 4,
+      "from_index": 13,
+      "to_index": 36,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 5,
+        "total_distance": 96,
+        "max_distance": 12,
+        "min_distance": 7
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 5,
+        "total_distance": 94,
+        "max_distance": 12,
+        "min_distance": 7
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3472
+    },
+    {
+      "turn": 15,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 53,
+      "endgame_active": false,
+      "pin_id": 9,
+      "from_index": 104,
+      "to_index": 58,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 4,
+        "total_distance": 92,
+        "max_distance": 12,
+        "min_distance": 6
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 4,
+        "total_distance": 88,
+        "max_distance": 12,
+        "min_distance": 5
+      },
+      "dist_improvement": 4,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3584
+    },
+    {
+      "turn": 16,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 53,
+      "endgame_active": false,
+      "pin_id": 6,
+      "from_index": 26,
+      "to_index": 47,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 5,
+        "total_distance": 94,
+        "max_distance": 12,
+        "min_distance": 7
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 5,
+        "total_distance": 92,
+        "max_distance": 12,
+        "min_distance": 6
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3371
+    },
+    {
+      "turn": 17,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 58,
+      "endgame_active": false,
+      "pin_id": 1,
+      "from_index": 92,
+      "to_index": 49,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 4,
+        "total_distance": 88,
+        "max_distance": 12,
+        "min_distance": 5
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 4,
+        "total_distance": 84,
+        "max_distance": 12,
+        "min_distance": 4
+      },
+      "dist_improvement": 4,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.351
+    },
+    {
+      "turn": 18,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 52,
+      "endgame_active": false,
+      "pin_id": 3,
+      "from_index": 37,
+      "to_index": 56,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 5,
+        "total_distance": 92,
+        "max_distance": 12,
+        "min_distance": 6
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 5,
+        "total_distance": 90,
+        "max_distance": 12,
+        "min_distance": 5
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3369
+    },
+    {
+      "turn": 19,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 60,
+      "endgame_active": false,
+      "pin_id": 5,
+      "from_index": 78,
+      "to_index": 38,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 4,
+        "total_distance": 84,
+        "max_distance": 12,
+        "min_distance": 4
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 4,
+        "total_distance": 80,
+        "max_distance": 12,
+        "min_distance": 3
+      },
+      "dist_improvement": 4,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3488
+    },
+    {
+      "turn": 20,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 54,
+      "endgame_active": false,
+      "pin_id": 4,
+      "from_index": 36,
+      "to_index": 78,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 5,
+        "total_distance": 90,
+        "max_distance": 12,
+        "min_distance": 5
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 5,
+        "total_distance": 86,
+        "max_distance": 12,
+        "min_distance": 3
+      },
+      "dist_improvement": 4,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3499
+    },
+    {
+      "turn": 21,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 61,
+      "endgame_active": false,
+      "pin_id": 0,
+      "from_index": 68,
+      "to_index": 27,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 4,
+        "total_distance": 80,
+        "max_distance": 12,
+        "min_distance": 3
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 4,
+        "total_distance": 76,
+        "max_distance": 12,
+        "min_distance": 2
+      },
+      "dist_improvement": 4,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3644
+    },
+    {
+      "turn": 22,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 53,
+      "endgame_active": false,
+      "pin_id": 7,
+      "from_index": 7,
+      "to_index": 29,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 5,
+        "total_distance": 86,
+        "max_distance": 12,
+        "min_distance": 3
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 4,
+        "total_distance": 84,
+        "max_distance": 12,
+        "min_distance": 3
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.4328
+    },
+    {
+      "turn": 23,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 66,
+      "endgame_active": false,
+      "pin_id": 9,
+      "from_index": 58,
+      "to_index": 14,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 4,
+        "total_distance": 76,
+        "max_distance": 12,
+        "min_distance": 2
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 4,
+        "total_distance": 72,
+        "max_distance": 12,
+        "min_distance": 1
+      },
+      "dist_improvement": 4,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.327
+    },
+    {
+      "turn": 24,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 58,
+      "endgame_active": false,
+      "pin_id": 0,
+      "from_index": 16,
+      "to_index": 41,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 4,
+        "total_distance": 84,
+        "max_distance": 12,
+        "min_distance": 3
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 4,
+        "total_distance": 82,
+        "max_distance": 12,
+        "min_distance": 3
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3418
+    },
+    {
+      "turn": 25,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 56,
+      "endgame_active": false,
+      "pin_id": 1,
+      "from_index": 49,
+      "to_index": 6,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 4,
+        "total_distance": 72,
+        "max_distance": 12,
+        "min_distance": 1
+      },
+      "after": {
+        "pins_in_goal": 1,
+        "pins_in_home": 4,
+        "total_distance": 68,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 4,
+      "pins_in_goal_delta": 1,
+      "latency_s": 0.3458
+    },
+    {
+      "turn": 26,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 56,
+      "endgame_active": false,
+      "pin_id": 7,
+      "from_index": 29,
+      "to_index": 52,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 4,
+        "total_distance": 82,
+        "max_distance": 12,
+        "min_distance": 3
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 4,
+        "total_distance": 80,
+        "max_distance": 12,
+        "min_distance": 3
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3506
+    },
+    {
+      "turn": 27,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 53,
+      "endgame_active": false,
+      "pin_id": 5,
+      "from_index": 38,
+      "to_index": 15,
+      "before": {
+        "pins_in_goal": 1,
+        "pins_in_home": 4,
+        "total_distance": 68,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 1,
+        "pins_in_home": 4,
+        "total_distance": 66,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3337
+    },
+    {
+      "turn": 28,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 52,
+      "endgame_active": false,
+      "pin_id": 0,
+      "from_index": 41,
+      "to_index": 62,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 4,
+        "total_distance": 80,
+        "max_distance": 12,
+        "min_distance": 3
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 4,
+        "total_distance": 78,
+        "max_distance": 12,
+        "min_distance": 3
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3346
+    },
+    {
+      "turn": 29,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 45,
+      "endgame_active": false,
+      "pin_id": 0,
+      "from_index": 27,
+      "to_index": 7,
+      "before": {
+        "pins_in_goal": 1,
+        "pins_in_home": 4,
+        "total_distance": 66,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 2,
+        "pins_in_home": 4,
+        "total_distance": 64,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 1,
+      "latency_s": 0.3203
+    },
+    {
+      "turn": 30,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 50,
+      "endgame_active": false,
+      "pin_id": 7,
+      "from_index": 52,
+      "to_index": 72,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 4,
+        "total_distance": 78,
+        "max_distance": 12,
+        "min_distance": 3
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 4,
+        "total_distance": 76,
+        "max_distance": 12,
+        "min_distance": 3
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3326
+    },
+    {
+      "turn": 31,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 45,
+      "endgame_active": false,
+      "pin_id": 6,
+      "from_index": 117,
+      "to_index": 106,
+      "before": {
+        "pins_in_goal": 2,
+        "pins_in_home": 4,
+        "total_distance": 64,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 2,
+        "pins_in_home": 3,
+        "total_distance": 62,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3279
+    },
+    {
+      "turn": 32,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 50,
+      "endgame_active": false,
+      "pin_id": 0,
+      "from_index": 62,
+      "to_index": 83,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 4,
+        "total_distance": 76,
+        "max_distance": 12,
+        "min_distance": 3
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 4,
+        "total_distance": 74,
+        "max_distance": 12,
+        "min_distance": 3
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3316
+    },
+    {
+      "turn": 33,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 51,
+      "endgame_active": false,
+      "pin_id": 3,
+      "from_index": 114,
+      "to_index": 71,
+      "before": {
+        "pins_in_goal": 2,
+        "pins_in_home": 3,
+        "total_distance": 62,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 2,
+        "pins_in_home": 2,
+        "total_distance": 58,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 4,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3421
+    },
+    {
+      "turn": 34,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 51,
+      "endgame_active": false,
+      "pin_id": 9,
+      "from_index": 9,
+      "to_index": 31,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 4,
+        "total_distance": 74,
+        "max_distance": 12,
+        "min_distance": 3
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 3,
+        "total_distance": 72,
+        "max_distance": 12,
+        "min_distance": 3
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3395
+    },
+    {
+      "turn": 35,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 53,
+      "endgame_active": false,
+      "pin_id": 2,
+      "from_index": 91,
+      "to_index": 79,
+      "before": {
+        "pins_in_goal": 2,
+        "pins_in_home": 2,
+        "total_distance": 58,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 2,
+        "pins_in_home": 2,
+        "total_distance": 57,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3327
+    },
+    {
+      "turn": 36,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 52,
+      "endgame_active": false,
+      "pin_id": 5,
+      "from_index": 18,
+      "to_index": 43,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 3,
+        "total_distance": 72,
+        "max_distance": 12,
+        "min_distance": 3
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 3,
+        "total_distance": 70,
+        "max_distance": 12,
+        "min_distance": 3
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3696
+    },
+    {
+      "turn": 37,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 51,
+      "endgame_active": false,
+      "pin_id": 2,
+      "from_index": 79,
+      "to_index": 68,
+      "before": {
+        "pins_in_goal": 2,
+        "pins_in_home": 2,
+        "total_distance": 57,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 2,
+        "pins_in_home": 2,
+        "total_distance": 56,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3724
+    },
+    {
+      "turn": 38,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 53,
+      "endgame_active": false,
+      "pin_id": 9,
+      "from_index": 31,
+      "to_index": 54,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 3,
+        "total_distance": 70,
+        "max_distance": 12,
+        "min_distance": 3
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 3,
+        "total_distance": 68,
+        "max_distance": 12,
+        "min_distance": 3
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3204
+    },
+    {
+      "turn": 39,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 52,
+      "endgame_active": false,
+      "pin_id": 2,
+      "from_index": 68,
+      "to_index": 58,
+      "before": {
+        "pins_in_goal": 2,
+        "pins_in_home": 2,
+        "total_distance": 56,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 2,
+        "pins_in_home": 2,
+        "total_distance": 55,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3244
+    },
+    {
+      "turn": 40,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 53,
+      "endgame_active": false,
+      "pin_id": 5,
+      "from_index": 43,
+      "to_index": 64,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 3,
+        "total_distance": 68,
+        "max_distance": 12,
+        "min_distance": 3
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 3,
+        "total_distance": 66,
+        "max_distance": 12,
+        "min_distance": 3
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3214
+    },
+    {
+      "turn": 41,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 53,
+      "endgame_active": false,
+      "pin_id": 3,
+      "from_index": 71,
+      "to_index": 53,
+      "before": {
+        "pins_in_goal": 2,
+        "pins_in_home": 2,
+        "total_distance": 55,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 2,
+        "pins_in_home": 2,
+        "total_distance": 53,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3305
+    },
+    {
+      "turn": 42,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 53,
+      "endgame_active": false,
+      "pin_id": 0,
+      "from_index": 83,
+      "to_index": 94,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 3,
+        "total_distance": 66,
+        "max_distance": 12,
+        "min_distance": 3
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 3,
+        "total_distance": 65,
+        "max_distance": 12,
+        "min_distance": 2
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3189
+    },
+    {
+      "turn": 43,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 53,
+      "endgame_active": false,
+      "pin_id": 6,
+      "from_index": 106,
+      "to_index": 43,
+      "before": {
+        "pins_in_goal": 2,
+        "pins_in_home": 2,
+        "total_distance": 53,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 2,
+        "pins_in_home": 2,
+        "total_distance": 47,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 6,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3369
+    },
+    {
+      "turn": 44,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 50,
+      "endgame_active": false,
+      "pin_id": 0,
+      "from_index": 94,
+      "to_index": 106,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 3,
+        "total_distance": 65,
+        "max_distance": 12,
+        "min_distance": 2
+      },
+      "after": {
+        "pins_in_goal": 0,
+        "pins_in_home": 3,
+        "total_distance": 64,
+        "max_distance": 12,
+        "min_distance": 1
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3188
+    },
+    {
+      "turn": 45,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 52,
+      "endgame_active": false,
+      "pin_id": 2,
+      "from_index": 58,
+      "to_index": 48,
+      "before": {
+        "pins_in_goal": 2,
+        "pins_in_home": 2,
+        "total_distance": 47,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 2,
+        "pins_in_home": 2,
+        "total_distance": 46,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.329
+    },
+    {
+      "turn": 46,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 50,
+      "endgame_active": false,
+      "pin_id": 0,
+      "from_index": 106,
+      "to_index": 114,
+      "before": {
+        "pins_in_goal": 0,
+        "pins_in_home": 3,
+        "total_distance": 64,
+        "max_distance": 12,
+        "min_distance": 1
+      },
+      "after": {
+        "pins_in_goal": 1,
+        "pins_in_home": 3,
+        "total_distance": 63,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 1,
+      "latency_s": 0.3225
+    },
+    {
+      "turn": 47,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 53,
+      "endgame_active": false,
+      "pin_id": 2,
+      "from_index": 48,
+      "to_index": 37,
+      "before": {
+        "pins_in_goal": 2,
+        "pins_in_home": 2,
+        "total_distance": 46,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 2,
+        "pins_in_home": 2,
+        "total_distance": 45,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.4448
+    },
+    {
+      "turn": 48,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 47,
+      "endgame_active": false,
+      "pin_id": 1,
+      "from_index": 1,
+      "to_index": 3,
+      "before": {
+        "pins_in_goal": 1,
+        "pins_in_home": 3,
+        "total_distance": 63,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 1,
+        "pins_in_home": 3,
+        "total_distance": 62,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3296
+    },
+    {
+      "turn": 49,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 49,
+      "endgame_active": false,
+      "pin_id": 2,
+      "from_index": 37,
+      "to_index": 26,
+      "before": {
+        "pins_in_goal": 2,
+        "pins_in_home": 2,
+        "total_distance": 45,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 2,
+        "pins_in_home": 2,
+        "total_distance": 44,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3214
+    },
+    {
+      "turn": 50,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 51,
+      "endgame_active": false,
+      "pin_id": 1,
+      "from_index": 3,
+      "to_index": 16,
+      "before": {
+        "pins_in_goal": 1,
+        "pins_in_home": 3,
+        "total_distance": 62,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 1,
+        "pins_in_home": 2,
+        "total_distance": 60,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.335
+    },
+    {
+      "turn": 51,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 48,
+      "endgame_active": false,
+      "pin_id": 3,
+      "from_index": 53,
+      "to_index": 32,
+      "before": {
+        "pins_in_goal": 2,
+        "pins_in_home": 2,
+        "total_distance": 44,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 2,
+        "pins_in_home": 2,
+        "total_distance": 43,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3242
+    },
+    {
+      "turn": 52,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 53,
+      "endgame_active": false,
+      "pin_id": 8,
+      "from_index": 8,
+      "to_index": 28,
+      "before": {
+        "pins_in_goal": 1,
+        "pins_in_home": 2,
+        "total_distance": 60,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 1,
+        "pins_in_home": 1,
+        "total_distance": 58,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3343
+    },
+    {
+      "turn": 53,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 48,
+      "endgame_active": false,
+      "pin_id": 3,
+      "from_index": 32,
+      "to_index": 19,
+      "before": {
+        "pins_in_goal": 2,
+        "pins_in_home": 2,
+        "total_distance": 43,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 2,
+        "pins_in_home": 2,
+        "total_distance": 42,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3262
+    },
+    {
+      "turn": 54,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 51,
+      "endgame_active": false,
+      "pin_id": 1,
+      "from_index": 16,
+      "to_index": 39,
+      "before": {
+        "pins_in_goal": 1,
+        "pins_in_home": 1,
+        "total_distance": 58,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 1,
+        "pins_in_home": 1,
+        "total_distance": 56,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3336
+    },
+    {
+      "turn": 55,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 46,
+      "endgame_active": false,
+      "pin_id": 3,
+      "from_index": 19,
+      "to_index": 18,
+      "before": {
+        "pins_in_goal": 2,
+        "pins_in_home": 2,
+        "total_distance": 42,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 2,
+        "pins_in_home": 2,
+        "total_distance": 41,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3285
+    },
+    {
+      "turn": 56,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 54,
+      "endgame_active": false,
+      "pin_id": 8,
+      "from_index": 28,
+      "to_index": 49,
+      "before": {
+        "pins_in_goal": 1,
+        "pins_in_home": 1,
+        "total_distance": 56,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 1,
+        "pins_in_home": 1,
+        "total_distance": 54,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3085
+    },
+    {
+      "turn": 57,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 52,
+      "endgame_active": false,
+      "pin_id": 3,
+      "from_index": 18,
+      "to_index": 9,
+      "before": {
+        "pins_in_goal": 2,
+        "pins_in_home": 2,
+        "total_distance": 41,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 3,
+        "pins_in_home": 2,
+        "total_distance": 40,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 1,
+      "latency_s": 0.3416
+    },
+    {
+      "turn": 58,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 53,
+      "endgame_active": false,
+      "pin_id": 1,
+      "from_index": 39,
+      "to_index": 58,
+      "before": {
+        "pins_in_goal": 1,
+        "pins_in_home": 1,
+        "total_distance": 54,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 1,
+        "pins_in_home": 1,
+        "total_distance": 52,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3137
+    },
+    {
+      "turn": 59,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 48,
+      "endgame_active": false,
+      "pin_id": 4,
+      "from_index": 102,
+      "to_index": 89,
+      "before": {
+        "pins_in_goal": 3,
+        "pins_in_home": 2,
+        "total_distance": 40,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 3,
+        "pins_in_home": 2,
+        "total_distance": 39,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3315
+    },
+    {
+      "turn": 60,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 55,
+      "endgame_active": false,
+      "pin_id": 8,
+      "from_index": 49,
+      "to_index": 90,
+      "before": {
+        "pins_in_goal": 1,
+        "pins_in_home": 1,
+        "total_distance": 52,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 1,
+        "pins_in_home": 1,
+        "total_distance": 48,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 4,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3189
+    },
+    {
+      "turn": 61,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 49,
+      "endgame_active": false,
+      "pin_id": 4,
+      "from_index": 89,
+      "to_index": 48,
+      "before": {
+        "pins_in_goal": 3,
+        "pins_in_home": 2,
+        "total_distance": 39,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 3,
+        "pins_in_home": 2,
+        "total_distance": 35,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 4,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3354
+    },
+    {
+      "turn": 62,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 55,
+      "endgame_active": false,
+      "pin_id": 4,
+      "from_index": 78,
+      "to_index": 103,
+      "before": {
+        "pins_in_goal": 1,
+        "pins_in_home": 1,
+        "total_distance": 48,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 1,
+        "pins_in_home": 1,
+        "total_distance": 46,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3207
+    },
+    {
+      "turn": 63,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 50,
+      "endgame_active": false,
+      "pin_id": 4,
+      "from_index": 48,
+      "to_index": 37,
+      "before": {
+        "pins_in_goal": 3,
+        "pins_in_home": 2,
+        "total_distance": 35,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 3,
+        "pins_in_home": 2,
+        "total_distance": 34,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3234
+    },
+    {
+      "turn": 64,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 51,
+      "endgame_active": false,
+      "pin_id": 8,
+      "from_index": 90,
+      "to_index": 112,
+      "before": {
+        "pins_in_goal": 1,
+        "pins_in_home": 1,
+        "total_distance": 46,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 2,
+        "pins_in_home": 1,
+        "total_distance": 44,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 1,
+      "latency_s": 0.3241
+    },
+    {
+      "turn": 65,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 49,
+      "endgame_active": false,
+      "pin_id": 5,
+      "from_index": 15,
+      "to_index": 4,
+      "before": {
+        "pins_in_goal": 3,
+        "pins_in_home": 2,
+        "total_distance": 34,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 4,
+        "pins_in_home": 2,
+        "total_distance": 33,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 1,
+      "latency_s": 0.3236
+    },
+    {
+      "turn": 66,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 50,
+      "endgame_active": false,
+      "pin_id": 1,
+      "from_index": 58,
+      "to_index": 67,
+      "before": {
+        "pins_in_goal": 2,
+        "pins_in_home": 1,
+        "total_distance": 44,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 2,
+        "pins_in_home": 1,
+        "total_distance": 43,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3232
+    },
+    {
+      "turn": 67,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 49,
+      "endgame_active": false,
+      "pin_id": 6,
+      "from_index": 43,
+      "to_index": 31,
+      "before": {
+        "pins_in_goal": 4,
+        "pins_in_home": 2,
+        "total_distance": 33,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 4,
+        "pins_in_home": 2,
+        "total_distance": 32,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3245
+    },
+    {
+      "turn": 68,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 56,
+      "endgame_active": false,
+      "pin_id": 1,
+      "from_index": 67,
+      "to_index": 77,
+      "before": {
+        "pins_in_goal": 2,
+        "pins_in_home": 1,
+        "total_distance": 43,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 2,
+        "pins_in_home": 1,
+        "total_distance": 42,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3234
+    },
+    {
+      "turn": 69,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 50,
+      "endgame_active": false,
+      "pin_id": 6,
+      "from_index": 31,
+      "to_index": 18,
+      "before": {
+        "pins_in_goal": 4,
+        "pins_in_home": 2,
+        "total_distance": 32,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 4,
+        "pins_in_home": 2,
+        "total_distance": 31,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3071
+    },
+    {
+      "turn": 70,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 51,
+      "endgame_active": false,
+      "pin_id": 1,
+      "from_index": 77,
+      "to_index": 89,
+      "before": {
+        "pins_in_goal": 2,
+        "pins_in_home": 1,
+        "total_distance": 42,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 2,
+        "pins_in_home": 1,
+        "total_distance": 41,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3191
+    },
+    {
+      "turn": 71,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 50,
+      "endgame_active": false,
+      "pin_id": 6,
+      "from_index": 18,
+      "to_index": 0,
+      "before": {
+        "pins_in_goal": 4,
+        "pins_in_home": 2,
+        "total_distance": 31,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 5,
+        "pins_in_home": 2,
+        "total_distance": 30,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 1,
+      "latency_s": 0.4417
+    },
+    {
+      "turn": 72,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 51,
+      "endgame_active": false,
+      "pin_id": 1,
+      "from_index": 89,
+      "to_index": 102,
+      "before": {
+        "pins_in_goal": 2,
+        "pins_in_home": 1,
+        "total_distance": 41,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 2,
+        "pins_in_home": 1,
+        "total_distance": 40,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3183
+    },
+    {
+      "turn": 73,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 47,
+      "endgame_active": false,
+      "pin_id": 7,
+      "from_index": 118,
+      "to_index": 115,
+      "before": {
+        "pins_in_goal": 5,
+        "pins_in_home": 2,
+        "total_distance": 30,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 5,
+        "pins_in_home": 2,
+        "total_distance": 29,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3261
+    },
+    {
+      "turn": 74,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 48,
+      "endgame_active": false,
+      "pin_id": 1,
+      "from_index": 102,
+      "to_index": 111,
+      "before": {
+        "pins_in_goal": 2,
+        "pins_in_home": 1,
+        "total_distance": 40,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 3,
+        "pins_in_home": 1,
+        "total_distance": 39,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 1,
+      "latency_s": 0.3227
+    },
+    {
+      "turn": 75,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 49,
+      "endgame_active": false,
+      "pin_id": 7,
+      "from_index": 115,
+      "to_index": 102,
+      "before": {
+        "pins_in_goal": 5,
+        "pins_in_home": 2,
+        "total_distance": 29,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 5,
+        "pins_in_home": 1,
+        "total_distance": 27,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3335
+    },
+    {
+      "turn": 76,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 46,
+      "endgame_active": false,
+      "pin_id": 2,
+      "from_index": 2,
+      "to_index": 5,
+      "before": {
+        "pins_in_goal": 3,
+        "pins_in_home": 1,
+        "total_distance": 39,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 3,
+        "pins_in_home": 1,
+        "total_distance": 38,
+        "max_distance": 11,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3127
+    },
+    {
+      "turn": 77,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 46,
+      "endgame_active": false,
+      "pin_id": 7,
+      "from_index": 102,
+      "to_index": 89,
+      "before": {
+        "pins_in_goal": 5,
+        "pins_in_home": 1,
+        "total_distance": 27,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 5,
+        "pins_in_home": 1,
+        "total_distance": 26,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3188
+    },
+    {
+      "turn": 78,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 50,
+      "endgame_active": false,
+      "pin_id": 2,
+      "from_index": 5,
+      "to_index": 16,
+      "before": {
+        "pins_in_goal": 3,
+        "pins_in_home": 1,
+        "total_distance": 38,
+        "max_distance": 11,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 3,
+        "pins_in_home": 0,
+        "total_distance": 36,
+        "max_distance": 9,
+        "min_distance": 0
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3084
+    },
+    {
+      "turn": 79,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 51,
+      "endgame_active": false,
+      "pin_id": 7,
+      "from_index": 89,
+      "to_index": 77,
+      "before": {
+        "pins_in_goal": 5,
+        "pins_in_home": 1,
+        "total_distance": 26,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 5,
+        "pins_in_home": 1,
+        "total_distance": 25,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3231
+    },
+    {
+      "turn": 80,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 52,
+      "endgame_active": false,
+      "pin_id": 2,
+      "from_index": 16,
+      "to_index": 28,
+      "before": {
+        "pins_in_goal": 3,
+        "pins_in_home": 0,
+        "total_distance": 36,
+        "max_distance": 9,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 3,
+        "pins_in_home": 0,
+        "total_distance": 35,
+        "max_distance": 8,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3171
+    },
+    {
+      "turn": 81,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 52,
+      "endgame_active": false,
+      "pin_id": 7,
+      "from_index": 77,
+      "to_index": 66,
+      "before": {
+        "pins_in_goal": 5,
+        "pins_in_home": 1,
+        "total_distance": 25,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 5,
+        "pins_in_home": 1,
+        "total_distance": 24,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3266
+    },
+    {
+      "turn": 82,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 51,
+      "endgame_active": false,
+      "pin_id": 3,
+      "from_index": 56,
+      "to_index": 77,
+      "before": {
+        "pins_in_goal": 3,
+        "pins_in_home": 0,
+        "total_distance": 35,
+        "max_distance": 8,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 3,
+        "pins_in_home": 0,
+        "total_distance": 33,
+        "max_distance": 8,
+        "min_distance": 0
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3288
+    },
+    {
+      "turn": 83,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 55,
+      "endgame_active": false,
+      "pin_id": 7,
+      "from_index": 66,
+      "to_index": 56,
+      "before": {
+        "pins_in_goal": 5,
+        "pins_in_home": 1,
+        "total_distance": 24,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 5,
+        "pins_in_home": 1,
+        "total_distance": 23,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3116
+    },
+    {
+      "turn": 84,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 52,
+      "endgame_active": false,
+      "pin_id": 2,
+      "from_index": 28,
+      "to_index": 39,
+      "before": {
+        "pins_in_goal": 3,
+        "pins_in_home": 0,
+        "total_distance": 33,
+        "max_distance": 8,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 3,
+        "pins_in_home": 0,
+        "total_distance": 32,
+        "max_distance": 7,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3151
+    },
+    {
+      "turn": 85,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 49,
+      "endgame_active": false,
+      "pin_id": 8,
+      "from_index": 119,
+      "to_index": 116,
+      "before": {
+        "pins_in_goal": 5,
+        "pins_in_home": 1,
+        "total_distance": 23,
+        "max_distance": 12,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 5,
+        "pins_in_home": 1,
+        "total_distance": 22,
+        "max_distance": 11,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3111
+    },
+    {
+      "turn": 86,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 52,
+      "endgame_active": false,
+      "pin_id": 2,
+      "from_index": 39,
+      "to_index": 49,
+      "before": {
+        "pins_in_goal": 3,
+        "pins_in_home": 0,
+        "total_distance": 32,
+        "max_distance": 7,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 3,
+        "pins_in_home": 0,
+        "total_distance": 31,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3121
+    },
+    {
+      "turn": 87,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 50,
+      "endgame_active": false,
+      "pin_id": 8,
+      "from_index": 116,
+      "to_index": 113,
+      "before": {
+        "pins_in_goal": 5,
+        "pins_in_home": 1,
+        "total_distance": 22,
+        "max_distance": 11,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 5,
+        "pins_in_home": 1,
+        "total_distance": 21,
+        "max_distance": 10,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3051
+    },
+    {
+      "turn": 88,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 50,
+      "endgame_active": false,
+      "pin_id": 2,
+      "from_index": 49,
+      "to_index": 58,
+      "before": {
+        "pins_in_goal": 3,
+        "pins_in_home": 0,
+        "total_distance": 31,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 3,
+        "pins_in_home": 0,
+        "total_distance": 30,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3316
+    },
+    {
+      "turn": 89,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 49,
+      "endgame_active": false,
+      "pin_id": 8,
+      "from_index": 113,
+      "to_index": 104,
+      "before": {
+        "pins_in_goal": 5,
+        "pins_in_home": 1,
+        "total_distance": 21,
+        "max_distance": 10,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 5,
+        "pins_in_home": 0,
+        "total_distance": 20,
+        "max_distance": 9,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.326
+    },
+    {
+      "turn": 90,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 52,
+      "endgame_active": false,
+      "pin_id": 2,
+      "from_index": 58,
+      "to_index": 67,
+      "before": {
+        "pins_in_goal": 3,
+        "pins_in_home": 0,
+        "total_distance": 30,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 3,
+        "pins_in_home": 0,
+        "total_distance": 29,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3271
+    },
+    {
+      "turn": 91,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 52,
+      "endgame_active": false,
+      "pin_id": 8,
+      "from_index": 104,
+      "to_index": 91,
+      "before": {
+        "pins_in_goal": 5,
+        "pins_in_home": 0,
+        "total_distance": 20,
+        "max_distance": 9,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 5,
+        "pins_in_home": 0,
+        "total_distance": 19,
+        "max_distance": 8,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3161
+    },
+    {
+      "turn": 92,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 52,
+      "endgame_active": false,
+      "pin_id": 2,
+      "from_index": 67,
+      "to_index": 78,
+      "before": {
+        "pins_in_goal": 3,
+        "pins_in_home": 0,
+        "total_distance": 29,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 3,
+        "pins_in_home": 0,
+        "total_distance": 28,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3304
+    },
+    {
+      "turn": 93,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 49,
+      "endgame_active": false,
+      "pin_id": 8,
+      "from_index": 91,
+      "to_index": 79,
+      "before": {
+        "pins_in_goal": 5,
+        "pins_in_home": 0,
+        "total_distance": 19,
+        "max_distance": 8,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 5,
+        "pins_in_home": 0,
+        "total_distance": 18,
+        "max_distance": 7,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3142
+    },
+    {
+      "turn": 94,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 61,
+      "endgame_active": false,
+      "pin_id": 2,
+      "from_index": 78,
+      "to_index": 89,
+      "before": {
+        "pins_in_goal": 3,
+        "pins_in_home": 0,
+        "total_distance": 28,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 3,
+        "pins_in_home": 0,
+        "total_distance": 27,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3371
+    },
+    {
+      "turn": 95,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 50,
+      "endgame_active": false,
+      "pin_id": 8,
+      "from_index": 79,
+      "to_index": 68,
+      "before": {
+        "pins_in_goal": 5,
+        "pins_in_home": 0,
+        "total_distance": 18,
+        "max_distance": 7,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 5,
+        "pins_in_home": 0,
+        "total_distance": 17,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3211
+    },
+    {
+      "turn": 96,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 61,
+      "endgame_active": false,
+      "pin_id": 3,
+      "from_index": 77,
+      "to_index": 115,
+      "before": {
+        "pins_in_goal": 3,
+        "pins_in_home": 0,
+        "total_distance": 27,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 4,
+        "pins_in_home": 0,
+        "total_distance": 24,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "dist_improvement": 3,
+      "pins_in_goal_delta": 1,
+      "latency_s": 0.399
+    },
+    {
+      "turn": 97,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 50,
+      "endgame_active": false,
+      "pin_id": 8,
+      "from_index": 68,
+      "to_index": 58,
+      "before": {
+        "pins_in_goal": 5,
+        "pins_in_home": 0,
+        "total_distance": 17,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 5,
+        "pins_in_home": 0,
+        "total_distance": 16,
+        "max_distance": 5,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3244
+    },
+    {
+      "turn": 98,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 51,
+      "endgame_active": false,
+      "pin_id": 2,
+      "from_index": 89,
+      "to_index": 102,
+      "before": {
+        "pins_in_goal": 4,
+        "pins_in_home": 0,
+        "total_distance": 24,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 4,
+        "pins_in_home": 0,
+        "total_distance": 23,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3052
+    },
+    {
+      "turn": 99,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 51,
+      "endgame_active": false,
+      "pin_id": 8,
+      "from_index": 58,
+      "to_index": 48,
+      "before": {
+        "pins_in_goal": 5,
+        "pins_in_home": 0,
+        "total_distance": 16,
+        "max_distance": 5,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 5,
+        "pins_in_home": 0,
+        "total_distance": 15,
+        "max_distance": 5,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3255
+    },
+    {
+      "turn": 100,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 46,
+      "endgame_active": false,
+      "pin_id": 4,
+      "from_index": 103,
+      "to_index": 116,
+      "before": {
+        "pins_in_goal": 4,
+        "pins_in_home": 0,
+        "total_distance": 23,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 5,
+        "pins_in_home": 0,
+        "total_distance": 22,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 1,
+      "latency_s": 0.312
+    },
+    {
+      "turn": 101,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 52,
+      "endgame_active": false,
+      "pin_id": 8,
+      "from_index": 48,
+      "to_index": 27,
+      "before": {
+        "pins_in_goal": 5,
+        "pins_in_home": 0,
+        "total_distance": 15,
+        "max_distance": 5,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 5,
+        "pins_in_home": 0,
+        "total_distance": 13,
+        "max_distance": 5,
+        "min_distance": 0
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3403
+    },
+    {
+      "turn": 102,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 48,
+      "endgame_active": false,
+      "pin_id": 5,
+      "from_index": 64,
+      "to_index": 73,
+      "before": {
+        "pins_in_goal": 5,
+        "pins_in_home": 0,
+        "total_distance": 22,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 5,
+        "pins_in_home": 0,
+        "total_distance": 21,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3392
+    },
+    {
+      "turn": 103,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 52,
+      "endgame_active": false,
+      "pin_id": 8,
+      "from_index": 27,
+      "to_index": 15,
+      "before": {
+        "pins_in_goal": 5,
+        "pins_in_home": 0,
+        "total_distance": 13,
+        "max_distance": 5,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 5,
+        "pins_in_home": 0,
+        "total_distance": 12,
+        "max_distance": 5,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3419
+    },
+    {
+      "turn": 104,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 49,
+      "endgame_active": false,
+      "pin_id": 5,
+      "from_index": 73,
+      "to_index": 83,
+      "before": {
+        "pins_in_goal": 5,
+        "pins_in_home": 0,
+        "total_distance": 21,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 5,
+        "pins_in_home": 0,
+        "total_distance": 20,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3368
+    },
+    {
+      "turn": 105,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 49,
+      "endgame_active": false,
+      "pin_id": 9,
+      "from_index": 14,
+      "to_index": 3,
+      "before": {
+        "pins_in_goal": 5,
+        "pins_in_home": 0,
+        "total_distance": 12,
+        "max_distance": 5,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 6,
+        "pins_in_home": 0,
+        "total_distance": 11,
+        "max_distance": 5,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 1,
+      "latency_s": 0.3185
+    },
+    {
+      "turn": 106,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 49,
+      "endgame_active": false,
+      "pin_id": 5,
+      "from_index": 83,
+      "to_index": 94,
+      "before": {
+        "pins_in_goal": 5,
+        "pins_in_home": 0,
+        "total_distance": 20,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 5,
+        "pins_in_home": 0,
+        "total_distance": 19,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3532
+    },
+    {
+      "turn": 107,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 46,
+      "endgame_active": false,
+      "pin_id": 4,
+      "from_index": 37,
+      "to_index": 14,
+      "before": {
+        "pins_in_goal": 6,
+        "pins_in_home": 0,
+        "total_distance": 11,
+        "max_distance": 5,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 6,
+        "pins_in_home": 0,
+        "total_distance": 9,
+        "max_distance": 5,
+        "min_distance": 0
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3385
+    },
+    {
+      "turn": 108,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 52,
+      "endgame_active": false,
+      "pin_id": 5,
+      "from_index": 94,
+      "to_index": 106,
+      "before": {
+        "pins_in_goal": 5,
+        "pins_in_home": 0,
+        "total_distance": 19,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 5,
+        "pins_in_home": 0,
+        "total_distance": 18,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3179
+    },
+    {
+      "turn": 109,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 41,
+      "endgame_active": false,
+      "pin_id": 7,
+      "from_index": 56,
+      "to_index": 37,
+      "before": {
+        "pins_in_goal": 6,
+        "pins_in_home": 0,
+        "total_distance": 9,
+        "max_distance": 5,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 6,
+        "pins_in_home": 0,
+        "total_distance": 7,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "dist_improvement": 2,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3234
+    },
+    {
+      "turn": 110,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 47,
+      "endgame_active": false,
+      "pin_id": 5,
+      "from_index": 106,
+      "to_index": 117,
+      "before": {
+        "pins_in_goal": 5,
+        "pins_in_home": 0,
+        "total_distance": 18,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 6,
+        "pins_in_home": 0,
+        "total_distance": 17,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 1,
+      "latency_s": 0.3161
+    },
+    {
+      "turn": 111,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 43,
+      "endgame_active": false,
+      "pin_id": 0,
+      "from_index": 7,
+      "to_index": 2,
+      "before": {
+        "pins_in_goal": 6,
+        "pins_in_home": 0,
+        "total_distance": 7,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 6,
+        "pins_in_home": 0,
+        "total_distance": 7,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "dist_improvement": 0,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3212
+    },
+    {
+      "turn": 112,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 43,
+      "endgame_active": false,
+      "pin_id": 6,
+      "from_index": 47,
+      "to_index": 56,
+      "before": {
+        "pins_in_goal": 6,
+        "pins_in_home": 0,
+        "total_distance": 17,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 6,
+        "pins_in_home": 0,
+        "total_distance": 16,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3185
+    },
+    {
+      "turn": 113,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 46,
+      "endgame_active": false,
+      "pin_id": 8,
+      "from_index": 15,
+      "to_index": 7,
+      "before": {
+        "pins_in_goal": 6,
+        "pins_in_home": 0,
+        "total_distance": 7,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 1,
+      "latency_s": 0.3165
+    },
+    {
+      "turn": 114,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 43,
+      "endgame_active": false,
+      "pin_id": 6,
+      "from_index": 56,
+      "to_index": 66,
+      "before": {
+        "pins_in_goal": 6,
+        "pins_in_home": 0,
+        "total_distance": 16,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 6,
+        "pins_in_home": 0,
+        "total_distance": 15,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3205
+    },
+    {
+      "turn": 115,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 39,
+      "endgame_active": false,
+      "pin_id": 0,
+      "from_index": 2,
+      "to_index": 1,
+      "before": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "dist_improvement": 0,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.31
+    },
+    {
+      "turn": 116,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 44,
+      "endgame_active": false,
+      "pin_id": 6,
+      "from_index": 66,
+      "to_index": 77,
+      "before": {
+        "pins_in_goal": 6,
+        "pins_in_home": 0,
+        "total_distance": 15,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 6,
+        "pins_in_home": 0,
+        "total_distance": 14,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3352
+    },
+    {
+      "turn": 117,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 36,
+      "endgame_active": false,
+      "pin_id": 0,
+      "from_index": 1,
+      "to_index": 2,
+      "before": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "dist_improvement": 0,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3187
+    },
+    {
+      "turn": 118,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 45,
+      "endgame_active": false,
+      "pin_id": 6,
+      "from_index": 77,
+      "to_index": 89,
+      "before": {
+        "pins_in_goal": 6,
+        "pins_in_home": 0,
+        "total_distance": 14,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 6,
+        "pins_in_home": 0,
+        "total_distance": 13,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3154
+    },
+    {
+      "turn": 119,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 39,
+      "endgame_active": false,
+      "pin_id": 0,
+      "from_index": 2,
+      "to_index": 1,
+      "before": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "dist_improvement": 0,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3193
+    },
+    {
+      "turn": 120,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 43,
+      "endgame_active": false,
+      "pin_id": 7,
+      "from_index": 72,
+      "to_index": 82,
+      "before": {
+        "pins_in_goal": 6,
+        "pins_in_home": 0,
+        "total_distance": 13,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 6,
+        "pins_in_home": 0,
+        "total_distance": 12,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3231
+    },
+    {
+      "turn": 121,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 36,
+      "endgame_active": false,
+      "pin_id": 0,
+      "from_index": 1,
+      "to_index": 2,
+      "before": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "dist_improvement": 0,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3124
+    },
+    {
+      "turn": 122,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 43,
+      "endgame_active": false,
+      "pin_id": 7,
+      "from_index": 82,
+      "to_index": 93,
+      "before": {
+        "pins_in_goal": 6,
+        "pins_in_home": 0,
+        "total_distance": 12,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 6,
+        "pins_in_home": 0,
+        "total_distance": 11,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.322
+    },
+    {
+      "turn": 123,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 39,
+      "endgame_active": false,
+      "pin_id": 0,
+      "from_index": 2,
+      "to_index": 1,
+      "before": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "dist_improvement": 0,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3204
+    },
+    {
+      "turn": 124,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 44,
+      "endgame_active": false,
+      "pin_id": 7,
+      "from_index": 93,
+      "to_index": 105,
+      "before": {
+        "pins_in_goal": 6,
+        "pins_in_home": 0,
+        "total_distance": 11,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 6,
+        "pins_in_home": 0,
+        "total_distance": 10,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3828
+    },
+    {
+      "turn": 125,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 36,
+      "endgame_active": false,
+      "pin_id": 0,
+      "from_index": 1,
+      "to_index": 2,
+      "before": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "dist_improvement": 0,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3218
+    },
+    {
+      "turn": 126,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 45,
+      "endgame_active": false,
+      "pin_id": 7,
+      "from_index": 105,
+      "to_index": 113,
+      "before": {
+        "pins_in_goal": 6,
+        "pins_in_home": 0,
+        "total_distance": 10,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 9,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 1,
+      "latency_s": 0.3192
+    },
+    {
+      "turn": 127,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 39,
+      "endgame_active": false,
+      "pin_id": 0,
+      "from_index": 2,
+      "to_index": 1,
+      "before": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "dist_improvement": 0,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3066
+    },
+    {
+      "turn": 128,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 37,
+      "endgame_active": false,
+      "pin_id": 9,
+      "from_index": 54,
+      "to_index": 63,
+      "before": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 9,
+        "max_distance": 6,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 8,
+        "max_distance": 5,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3214
+    },
+    {
+      "turn": 129,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 36,
+      "endgame_active": false,
+      "pin_id": 0,
+      "from_index": 1,
+      "to_index": 2,
+      "before": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "dist_improvement": 0,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3255
+    },
+    {
+      "turn": 130,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 37,
+      "endgame_active": false,
+      "pin_id": 9,
+      "from_index": 63,
+      "to_index": 72,
+      "before": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 8,
+        "max_distance": 5,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 7,
+        "max_distance": 4,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3018
+    },
+    {
+      "turn": 131,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 39,
+      "endgame_active": false,
+      "pin_id": 0,
+      "from_index": 2,
+      "to_index": 1,
+      "before": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "dist_improvement": 0,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3254
+    },
+    {
+      "turn": 132,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 37,
+      "endgame_active": false,
+      "pin_id": 9,
+      "from_index": 72,
+      "to_index": 82,
+      "before": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 7,
+        "max_distance": 4,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3265
+    },
+    {
+      "turn": 133,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 36,
+      "endgame_active": false,
+      "pin_id": 0,
+      "from_index": 1,
+      "to_index": 2,
+      "before": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "dist_improvement": 0,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3104
+    },
+    {
+      "turn": 134,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 37,
+      "endgame_active": false,
+      "pin_id": 9,
+      "from_index": 82,
+      "to_index": 93,
+      "before": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 5,
+        "max_distance": 2,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3285
+    },
+    {
+      "turn": 135,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 39,
+      "endgame_active": false,
+      "pin_id": 0,
+      "from_index": 2,
+      "to_index": 1,
+      "before": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "dist_improvement": 0,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3552
+    },
+    {
+      "turn": 136,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 39,
+      "endgame_active": false,
+      "pin_id": 9,
+      "from_index": 93,
+      "to_index": 105,
+      "before": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 5,
+        "max_distance": 2,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 4,
+        "max_distance": 2,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3136
+    },
+    {
+      "turn": 137,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 36,
+      "endgame_active": false,
+      "pin_id": 0,
+      "from_index": 1,
+      "to_index": 2,
+      "before": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "dist_improvement": 0,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3192
+    },
+    {
+      "turn": 138,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 35,
+      "endgame_active": false,
+      "pin_id": 0,
+      "from_index": 114,
+      "to_index": 119,
+      "before": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 4,
+        "max_distance": 2,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 4,
+        "max_distance": 2,
+        "min_distance": 0
+      },
+      "dist_improvement": 0,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3206
+    },
+    {
+      "turn": 139,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 39,
+      "endgame_active": false,
+      "pin_id": 0,
+      "from_index": 2,
+      "to_index": 1,
+      "before": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "dist_improvement": 0,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3164
+    },
+    {
+      "turn": 140,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 39,
+      "endgame_active": false,
+      "pin_id": 9,
+      "from_index": 105,
+      "to_index": 114,
+      "before": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 4,
+        "max_distance": 2,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 8,
+        "pins_in_home": 0,
+        "total_distance": 3,
+        "max_distance": 2,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 1,
+      "latency_s": 0.3123
+    },
+    {
+      "turn": 141,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 36,
+      "endgame_active": false,
+      "pin_id": 0,
+      "from_index": 1,
+      "to_index": 2,
+      "before": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "dist_improvement": 0,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.331
+    },
+    {
+      "turn": 142,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 30,
+      "endgame_active": true,
+      "pin_id": 1,
+      "from_index": 111,
+      "to_index": 118,
+      "before": {
+        "pins_in_goal": 8,
+        "pins_in_home": 0,
+        "total_distance": 3,
+        "max_distance": 2,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 8,
+        "pins_in_home": 0,
+        "total_distance": 3,
+        "max_distance": 2,
+        "min_distance": 0
+      },
+      "dist_improvement": 0,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.0032
+    },
+    {
+      "turn": 143,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 39,
+      "endgame_active": false,
+      "pin_id": 0,
+      "from_index": 2,
+      "to_index": 1,
+      "before": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "dist_improvement": 0,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3076
+    },
+    {
+      "turn": 144,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 32,
+      "endgame_active": true,
+      "pin_id": 2,
+      "from_index": 102,
+      "to_index": 111,
+      "before": {
+        "pins_in_goal": 8,
+        "pins_in_home": 0,
+        "total_distance": 3,
+        "max_distance": 2,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 9,
+        "pins_in_home": 0,
+        "total_distance": 2,
+        "max_distance": 2,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 1,
+      "latency_s": 0.0001
+    },
+    {
+      "turn": 145,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 36,
+      "endgame_active": false,
+      "pin_id": 0,
+      "from_index": 1,
+      "to_index": 2,
+      "before": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "dist_improvement": 0,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.3292
+    },
+    {
+      "turn": 146,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 25,
+      "endgame_active": true,
+      "pin_id": 3,
+      "from_index": 115,
+      "to_index": 120,
+      "before": {
+        "pins_in_goal": 9,
+        "pins_in_home": 0,
+        "total_distance": 2,
+        "max_distance": 2,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 9,
+        "pins_in_home": 0,
+        "total_distance": 2,
+        "max_distance": 2,
+        "min_distance": 0
+      },
+      "dist_improvement": 0,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.0017
+    },
+    {
+      "turn": 147,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 39,
+      "endgame_active": false,
+      "pin_id": 0,
+      "from_index": 2,
+      "to_index": 1,
+      "before": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "dist_improvement": 0,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.2602
+    },
+    {
+      "turn": 148,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 29,
+      "endgame_active": true,
+      "pin_id": 6,
+      "from_index": 89,
+      "to_index": 102,
+      "before": {
+        "pins_in_goal": 9,
+        "pins_in_home": 0,
+        "total_distance": 2,
+        "max_distance": 2,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 9,
+        "pins_in_home": 0,
+        "total_distance": 1,
+        "max_distance": 1,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.0001
+    },
+    {
+      "turn": 149,
+      "colour": "red",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 36,
+      "endgame_active": false,
+      "pin_id": 4,
+      "from_index": 14,
+      "to_index": 13,
+      "before": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 6,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 7,
+        "pins_in_home": 0,
+        "total_distance": 7,
+        "max_distance": 3,
+        "min_distance": 0
+      },
+      "dist_improvement": -1,
+      "pins_in_goal_delta": 0,
+      "latency_s": 0.1697
+    },
+    {
+      "turn": 150,
+      "colour": "blue",
+      "is_rl": true,
+      "agent_type": "rl",
+      "legal_count": 26,
+      "endgame_active": true,
+      "pin_id": 6,
+      "from_index": 102,
+      "to_index": 115,
+      "before": {
+        "pins_in_goal": 9,
+        "pins_in_home": 0,
+        "total_distance": 1,
+        "max_distance": 1,
+        "min_distance": 0
+      },
+      "after": {
+        "pins_in_goal": 10,
+        "pins_in_home": 0,
+        "total_distance": 0,
+        "max_distance": 0,
+        "min_distance": 0
+      },
+      "dist_improvement": 1,
+      "pins_in_goal_delta": 1,
+      "latency_s": 0.0
+    }
+  ],
+  "wall_time_s": 48.0
+}

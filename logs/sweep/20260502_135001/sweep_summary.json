@@ -1,0 +1,240 @@
+[
+  {
+    "label": "c_puct=1.0, temperature=0.0",
+    "scores": {
+      "2p_vs_heuristic": {
+        "pins": 10,
+        "score": 1300.5,
+        "moves": 129,
+        "wins": 5,
+        "games": 5
+      },
+      "2p_self_play": {
+        "pins": 9,
+        "score": 1199.6,
+        "moves": 128,
+        "wins": 5,
+        "games": 5
+      },
+      "4p_vs_greedy": {
+        "pins": 10,
+        "score": 1301.0,
+        "moves": 189,
+        "wins": 5,
+        "games": 5
+      },
+      "6p_vs_greedy": {
+        "pins": 5,
+        "score": 787.0,
+        "moves": 1800,
+        "wins": 0,
+        "games": 5
+      }
+    },
+    "elapsed": 815.6836383342743
+  },
+  {
+    "label": "c_puct=1.0, temperature=0.1",
+    "scores": {
+      "2p_vs_heuristic": {
+        "pins": 10,
+        "score": 1300.5,
+        "moves": 129,
+        "wins": 5,
+        "games": 5
+      },
+      "2p_self_play": {
+        "pins": 9.6,
+        "score": 1260.2,
+        "moves": 128.6,
+        "wins": 5,
+        "games": 5
+      },
+      "4p_vs_greedy": {
+        "pins": 8,
+        "score": 1095.6,
+        "moves": 989,
+        "wins": 1,
+        "games": 5
+      },
+      "6p_vs_greedy": {
+        "pins": 6.2,
+        "score": 910.6,
+        "moves": 1508.6,
+        "wins": 1,
+        "games": 5
+      }
+    },
+    "elapsed": 1079.0567076206207
+  },
+  {
+    "label": "c_puct=1.0, temperature=0.3",
+    "scores": {
+      "2p_vs_heuristic": {
+        "pins": 10,
+        "score": 1300.5,
+        "moves": 129,
+        "wins": 5,
+        "games": 5
+      },
+      "2p_self_play": {
+        "pins": 9.6,
+        "score": 1260.2,
+        "moves": 127,
+        "wins": 5,
+        "games": 5
+      },
+      "4p_vs_greedy": {
+        "pins": 9.8,
+        "score": 1279.9,
+        "moves": 828.8,
+        "wins": 4,
+        "games": 5
+      },
+      "6p_vs_greedy": {
+        "pins": 8.6,
+        "score": 1155.2,
+        "moves": 419.6,
+        "wins": 3,
+        "games": 5
+      }
+    },
+    "elapsed": 701.810756444931
+  },
+  {
+    "label": "c_puct=1.0, temperature=0.5",
+    "scores": {
+      "2p_vs_heuristic": {
+        "pins": 8.8,
+        "score": 1177.9,
+        "moves": 317.4,
+        "wins": 3,
+        "games": 5
+      },
+      "2p_self_play": {
+        "pins": 9.8,
+        "score": 1280.2,
+        "moves": 150.4,
+        "wins": 5,
+        "games": 5
+      },
+      "4p_vs_greedy": {
+        "pins": 9,
+        "score": 1197.1,
+        "moves": 709.4,
+        "wins": 3,
+        "games": 5
+      },
+      "6p_vs_greedy": {
+        "pins": 5.8,
+        "score": 862.7,
+        "moves": 614,
+        "wins": 0,
+        "games": 5
+      }
+    },
+    "elapsed": 935.3319940567017
+  },
+  {
+    "label": "c_puct=1.0, temperature=0.5, dirichlet_alpha=0.3, root_noise_epsilon=0.05",
+    "scores": {
+      "2p_vs_heuristic": {
+        "pins": 9.4,
+        "score": 1239.2,
+        "moves": 223.2,
+        "wins": 4,
+        "games": 5
+      },
+      "2p_self_play": {
+        "pins": 8.8,
+        "score": 1177.8,
+        "moves": 224.2,
+        "wins": 4,
+        "games": 5
+      },
+      "4p_vs_greedy": {
+        "pins": 8.6,
+        "score": 1157.1,
+        "moves": 608.6,
+        "wins": 3,
+        "games": 5
+      },
+      "6p_vs_greedy": {
+        "pins": 6.8,
+        "score": 973.7,
+        "moves": 991.4,
+        "wins": 1,
+        "games": 5
+      }
+    },
+    "elapsed": 1046.8678231239319
+  },
+  {
+    "label": "c_puct=1.5, temperature=0.0",
+    "scores": {
+      "2p_vs_heuristic": {
+        "pins": 10,
+        "score": 1300.5,
+        "moves": 129,
+        "wins": 5,
+        "games": 5
+      },
+      "2p_self_play": {
+        "pins": 9,
+        "score": 1199.6,
+        "moves": 128,
+        "wins": 5,
+        "games": 5
+      },
+      "4p_vs_greedy": {
+        "pins": 10,
+        "score": 1301.0,
+        "moves": 189,
+        "wins": 5,
+        "games": 5
+      },
+      "6p_vs_greedy": {
+        "pins": 6,
+        "score": 892.7,
+        "moves": 366,
+        "wins": 0,
+        "games": 5
+      }
+    },
+    "elapsed": 462.4934592247009
+  },
+  {
+    "label": "c_puct=1.5, temperature=0.5",
+    "scores": {
+      "2p_vs_heuristic": {
+        "pins": 10,
+        "score": 1300.5,
+        "moves": 129,
+        "wins": 5,
+        "games": 5
+      },
+      "2p_self_play": {
+        "pins": 9.2,
+        "score": 1219.0,
+        "moves": 231,
+        "wins": 4,
+        "games": 5
+      },
+      "4p_vs_greedy": {
+        "pins": 7.6,
+        "score": 1054.5,
+        "moves": 647.2,
+        "wins": 2,
+        "games": 5
+      },
+      "6p_vs_greedy": {
+        "pins": 8.6,
+        "score": 1155.6,
+        "moves": 1330,
+        "wins": 2,
+        "games": 5
+      }
+    },
+    "elapsed": 1056.662535905838
+  }
+]
