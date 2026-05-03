@@ -41,6 +41,7 @@ SWEEPS = {
         (0.5, 0.05),
     ],
     "comparison": "grid",
+    "confirm":    "grid",
 }
 
 COMPARISON_GRID = [
@@ -52,6 +53,16 @@ COMPARISON_GRID = [
     {"c_puct": 1.5, "temperature": 0.0},
     {"c_puct": 1.5, "temperature": 0.5},
 ]
+
+CONFIRM_GRID = [
+    {"c_puct": 1.0, "temperature": 0.3},
+    {"c_puct": 1.0, "temperature": 0.0},
+]
+
+GRIDS = {
+    "comparison": COMPARISON_GRID,
+    "confirm":    CONFIRM_GRID,
+}
 
 MATCHUPS = [
     "2p_vs_heuristic",
@@ -205,7 +216,7 @@ def main():
         print(f"{'#'*70}")
 
         if SWEEPS[sweep_param] == "grid":
-            grid = COMPARISON_GRID
+            grid = GRIDS[sweep_param]
             for overrides in grid:
                 params = dict(BASELINE)
                 params.update(overrides)
