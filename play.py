@@ -330,11 +330,12 @@ def interactive_game(agent, agent_name="Agent", num_players=2, max_moves=300):
         )
 
 
-def make_agent(args, checkpoint=None, dirichlet_alpha=None, root_noise_epsilon=None):
-    """Build the RL agent from args. Optionally override checkpoint + noise."""
+def make_agent(args, checkpoint=None, dirichlet_alpha=None, root_noise_epsilon=None,
+               mcts_simulations=None):
+    """Build the RL agent from args. Optionally override checkpoint + noise + sims."""
     return ChineseCheckersAgent(
         checkpoint_path=checkpoint if checkpoint is not None else args.checkpoint,
-        mcts_simulations=args.mcts_sims,
+        mcts_simulations=mcts_simulations if mcts_simulations is not None else args.mcts_sims,
         temperature=0.1,
         device=args.device,
         dirichlet_alpha=(
@@ -384,6 +385,9 @@ def main():
                     help="MCTS root noise alpha for the --opponent self RL agent (0=off)")
     wp.add_argument("--opponent-root-noise-epsilon", type=float, default=0.0,
                     help="MCTS root noise epsilon for the --opponent self RL agent (0=off)")
+    wp.add_argument("--opponent-mcts-sims", type=int, default=None,
+                    help="MCTS sims for the --opponent self RL agent. "
+                         "Defaults to --mcts-sims when not set.")
 
     # Play mode
     pp = sub.add_parser("play", help="Play against the agent")
@@ -408,13 +412,16 @@ def main():
                 checkpoint=opponent_ckpt,
                 dirichlet_alpha=args.opponent_dirichlet_alpha,
                 root_noise_epsilon=args.opponent_root_noise_epsilon,
+                mcts_simulations=args.opponent_mcts_sims,
             )
+            opp_sims = args.opponent_mcts_sims if args.opponent_mcts_sims is not None else args.mcts_sims
+            name_a = f"RL sims={args.mcts_sims}"
             opp_label = (
-                "RL (self)"
+                f"RL sims={opp_sims}"
                 if opponent_ckpt == args.checkpoint
-                else f"RL ({os.path.basename(os.path.dirname(opponent_ckpt))})"
+                else f"RL ({os.path.basename(os.path.dirname(opponent_ckpt))}) sims={opp_sims}"
             )
-            watch_game(agent, opponent, name_a="RL Agent (noisy)",
+            watch_game(agent, opponent, name_a=name_a,
                        name_b=opp_label, delay=args.delay)
         else:
             baseline = make_baseline(args.opponent)

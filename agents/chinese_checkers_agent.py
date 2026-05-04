@@ -65,7 +65,12 @@ class ChineseCheckersAgent:
                 num_res_blocks=num_res_blocks,
                 trunk_channels=trunk_channels,
             )
-            if checkpoint_path and os.path.exists(checkpoint_path):
+            if checkpoint_path:
+                if not os.path.exists(checkpoint_path):
+                    raise FileNotFoundError(
+                        f"Checkpoint not found: {checkpoint_path}. "
+                        f"Refusing to play with random weights."
+                    )
                 checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
                 self.model.load_state_dict(checkpoint["model_state_dict"])
                 print(f"Loaded checkpoint: {checkpoint_path}")
