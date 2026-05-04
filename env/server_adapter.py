@@ -67,7 +67,7 @@ class CompetitionPlayer:
         player_name: str = "RLAgent",
         checkpoint_path: Optional[str] = None,
         checkpoints_by_players: Optional[Dict[int, str]] = None,
-        mcts_simulations: int = 100,
+        mcts_simulations: int = 15,
         c_puct: float = 1.0,
         temperature: float = 0.3,
         time_limit: Optional[float] = None,
@@ -356,7 +356,7 @@ if __name__ == "__main__":
     parser.add_argument("--checkpoint-2p", default=None, help="Checkpoint to use when the joined game has 2 players.")
     parser.add_argument("--checkpoint-4p", default=None, help="Checkpoint to use when the joined game has 4 players.")
     parser.add_argument("--checkpoint-6p", default=None, help="Checkpoint to use when the joined game has 6 players.")
-    parser.add_argument("--mcts-sims", type=int, default=100, help="MCTS simulations per move. 100 validated on Phase 0c (0.3s/move on CUDA).")
+    parser.add_argument("--mcts-sims", type=int, default=15, help="MCTS simulations per move. CPU competition default — sweep_params on i7-1165G7 picked 15 (perfect 2P, best 4P). 100 was the CUDA default but is ~6.4s/move on CPU — too slow for the 60s game wall-clock.")
     parser.add_argument(
         "--c-puct", type=float, default=1.0,
         help="MCTS exploration constant. Competition default 1.0 (winner of "

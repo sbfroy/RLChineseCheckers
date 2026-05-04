@@ -21,16 +21,19 @@ from itertools import product
 
 
 BASELINE = {
-    "mcts_sims": 100,
-    "temperature": 0.1,
-    "c_puct": 1.5,
+    "mcts_sims": 10,
+    "temperature": 0.3,
+    "c_puct": 1.0,
     "endgame_threshold": 8,
     "dirichlet_alpha": 0.0,
     "root_noise_epsilon": 0.0,
 }
 
 SWEEPS = {
-    "mcts_sims":          [50, 100, 200],
+    # CPU sweep: locked CUDA value (100) is ~6.4 s/move on the user's laptop,
+    # which can't fit the 60s game wall-clock. Test the low end where moves
+    # complete fast enough to actually finish a game.
+    "mcts_sims":          [5, 10, 15, 20],
     "temperature":        [0.0, 0.1, 0.5],
     "c_puct":             [1.0, 1.5, 2.0, 3.0],
     "endgame_threshold":  [7, 8, 9],
