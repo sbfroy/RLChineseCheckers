@@ -75,12 +75,14 @@ Same launch command, plus `--host` and `--port`:
 
 ```bash
 python3 env/server_adapter.py \
-  --name <your-team-name> \
-  --checkpoint checkpoints/phase1_v6/model_best.pt \
-  --device cuda \
-  --host <server-ip> \
-  --port <server-port>
+    --name AlphaZeroClue \
+    --checkpoint checkpoints/phase1_v6/model_best.pt \
+    --device cpu \
+    --host 10.245.30.227 \
+    --port 50555 \
+    --mcts-sims 100
 ```
+
 
 The instructor will share the host/port for the test run.
 

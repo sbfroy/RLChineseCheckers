@@ -37,7 +37,13 @@ def rpc(payload: Dict[str, Any]) -> Dict[str, Any]:
         return {"ok": False, "error": f"connect-failed: {e}"}
 
     s.sendall(json.dumps(payload).encode("utf-8"))
-    data = s.recv(1_000_000)
+    chunks = []
+    while True:
+        chunk = s.recv(1_000_000)
+        if not chunk:
+            break
+        chunks.append(chunk)
+    data = b"".join(chunks)
     s.close()
 
     if not data:
@@ -214,7 +220,8 @@ class CompetitionPlayer:
                 break
             time.sleep(0.3)
 
-        # START
+        # Wait for user to send start
+        input("Press Enter to send Start...")
         rpc({"op": "start", "game_id": self.game_id, "player_id": self.player_id})
 
         # Wait for PLAYING
