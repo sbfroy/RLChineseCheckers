@@ -1,0 +1,1 @@
+TODO: Tune the weights for CPU use. I think mcts-sims at 25 is slighlty to time consuming.
