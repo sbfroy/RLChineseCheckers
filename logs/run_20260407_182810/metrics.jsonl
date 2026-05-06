@@ -1,1 +1,0 @@
-{"iteration": 1, "timestamp": "2026-04-07T18:47:17.952905", "buffer_size": 7500, "sp_time": 1130.56, "train_time": 0.95, "policy_loss": 3.955697, "value_loss": 0.14212, "total_loss": 4.097818, "lr": 0.0009998914383200486, "new_experiences": 7500, "avg_game_length": 300.0, "max_moves_pct": 1.0}

@@ -14,6 +14,10 @@ checkpoints/
 *.pt
 wandb/
 runs/
+logs/
+
+# Archived material (preserved locally for report writing)
+archive/
 
 # Pytest
 .pytest_cache/
