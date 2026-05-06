@@ -1,0 +1,16 @@
+{
+  "status": "finished",
+  "phase": "unknown",
+  "run_name": "test_run",
+  "config_file": "",
+  "started_at": "2026-05-06T09:57:36.514456",
+  "finished_at": "2026-05-06T09:57:37.297203",
+  "pid": 17205,
+  "current_iteration": 1,
+  "total_iterations": 1,
+  "latest_metrics": {
+    "policy_loss": 3.9742865562438965,
+    "value_loss": 1.189774513244629
+  },
+  "latest_eval": null
+}
