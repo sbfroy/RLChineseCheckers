@@ -15,6 +15,7 @@ checkpoints/
 wandb/
 runs/
 logs/
+training_status.json
 
 # Archived material (preserved locally for report writing)
 archive/
