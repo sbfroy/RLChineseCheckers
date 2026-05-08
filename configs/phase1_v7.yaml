@@ -1,0 +1,100 @@
+# Phase 1 v7 — high-sim RL pilot.
+#
+# Hypothesis: v3-v6 all degraded after iteration 5 because at sims=50,
+# MCTS visit counts are noisier than the network's prior. With 6x sims
+# (50 -> 300), MCTS visits should genuinely concentrate on better moves
+# and the cross-entropy update should pull the network *upward* instead
+# of toward noise.
+#
+# Pilot scope: 25 iterations (~18 h CUDA), gated against v6-iter-5
+# numbers. Auto-stop fires immediately if any core metric regresses
+# below the v6-iter-5 baseline minus tolerance.
+#
+# Decision rules (read after each eval):
+#   iter 5  : if any gate metric < baseline - 1.0 -> autostop, ship v6
+#   iter 15 : composite(15) > composite(5) by >= 1.0 -> extend 50 more
+#             iters at same settings; otherwise -> autostop, ship v6
+#   iter 25 : best ckpt clearly above v6-iter-5 across >= 3 of 4 gate
+#             metrics -> promote, re-run CPU sweep, ship for competition
+#
+# Launch (school machine, in tmux):
+#   python3.10 train.py \
+#     --config configs/phase1_v7.yaml \
+#     --resume checkpoints/phase_0c_v1/model_best.pt \
+#     --kl-anchor checkpoints/phase_0c_v1/model_best.pt \
+#     --device cuda \
+#     --phase rl_refine \
+#     --run-name phase1_v7
+
+model:
+  num_res_blocks: 6
+  trunk_channels: 128
+  policy_channels: 32
+  value_hidden: 128
+
+training:
+  num_iterations: 25
+  num_games_per_iteration: 20
+  num_players: "2,4,6"
+  batch_size: 256
+  epochs_per_iteration: 5
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  policy_loss_weight: 1.0
+  value_loss_weight: 1.0
+  buffer_capacity: 200000
+  min_buffer_size: 512
+  temperature: 1.0
+  checkpoint_dir: checkpoints
+  checkpoint_every: 5
+  eval_every: 5
+  device: cuda
+  freeze_policy: false
+  kl_anchor_weight: 0.3
+  opponent: mixed
+  include_anchor_as_opponent: true
+  max_moves_per_player: 200
+  # Gate baselines set to v6-iter-5 actual numbers minus 1.0 tolerance.
+  # If any current metric drops below baseline - tolerance, training
+  # auto-stops. Tighter than v6's gate (which used phase_0b numbers and
+  # let drift run for 75 iters before triggering).
+  gate_baseline:
+    self_play_pins: 9.5
+    4p_vs_greedy_pins: 10.0
+    2p_vs_heuristic_pins: 10.0
+  gate_tolerance: 1.0
+  gate_grace_iterations: 5
+
+mcts:
+  # Pilot variable under test: 6x v6's data-gen sim count.
+  num_simulations: 300
+  c_puct: 1.5
+  temperature: 1.0
+
+rewards:
+  win_reward: 1.0
+  loss_reward: -1.0
+  draw_reward: -0.5
+  max_moves_reward: -0.3
+  pin_goal_weight: 0.3
+  distance_weight: 0.01
+  lagging_weight: -0.005
+  home_exit_weight: 0.05
+  mobility_weight: 0.001
+  use_score_terminal: true
+  score_normalization: 1300.0
+  use_score_margin: false
+
+evaluation:
+  kind: phase1
+  matchups:
+    - 2p_vs_random
+    - 2p_vs_greedy
+    - 2p_vs_heuristic
+    - 2p_self_play
+    - 4p_vs_greedy
+    - 6p_vs_greedy
+  games_per_matchup: 4
+  # Eval at the same sim count as v6 used so the comparison to
+  # phase1_v6 iter 5 is apples-to-apples.
+  mcts_sims: 50
