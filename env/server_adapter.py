@@ -125,6 +125,39 @@ class CompetitionPlayer:
             root_noise_epsilon=self.root_noise_epsilon,
         )
 
+    def _warmup(self, state: Dict[str, Any]):
+        """Run one forward pass through the network on the initial state.
+
+        First inference after checkpoint load is slow (lazy init + weight
+        paging). Doing it before the main loop keeps move 1 within the
+        server's per-turn budget."""
+        if self.agent is None:
+            return
+        try:
+            import torch
+            from env.action_mapping import ACTION_SPACE_SIZE
+            pin_positions = state.get("pins", {})
+            turn_order = state.get("turn_order", [])
+            if not pin_positions or not turn_order:
+                return
+            spatial, scalars = self.agent.encoder.encode(
+                my_colour=self.colour,
+                pin_positions=pin_positions,
+                turn_order=turn_order,
+                move_count=0,
+                total_legal_actions=10,
+                num_active_players=len(turn_order),
+                my_move_count=0,
+            )
+            mask = torch.ones(ACTION_SPACE_SIZE, dtype=torch.bool)
+            self.agent.model.predict(
+                spatial.to(self.device),
+                scalars.to(self.device),
+                mask.to(self.device),
+            )
+        except Exception as e:
+            print(f"Warmup skipped: {e}")
+
     def _is_repeating(self, pin_id: int, to_index: int) -> bool:
         return (pin_id, to_index) in self._recent_moves
 
@@ -213,23 +246,44 @@ class CompetitionPlayer:
         print(f"Joined game {self.game_id} as {self.colour}")
 
         # Wait for game ready
+        ready_state: Optional[Dict[str, Any]] = None
         while True:
             st = rpc({"op": "get_state", "game_id": self.game_id})
             status = st.get("state", {}).get("status", "")
             if status in ("READY_TO_START", "PLAYING"):
+                ready_state = st["state"]
                 break
             time.sleep(0.3)
 
-        # Wait for user to send start
-        input("Press Enter to send Start...")
+        # Pre-load the agent BEFORE sending start. The server's per-turn
+        # timer begins the moment the game enters PLAYING — if we wait
+        # until then to load, ~5s of checkpoint paging + PyTorch lazy init
+        # eats the first turn and we get skipped before move 1.
+        ready_turn_order = (ready_state or {}).get("turn_order", [])
+        if ready_turn_order:
+            self._ensure_agent(num_players=len(ready_turn_order))
+            self._warmup(ready_state)
+
+        # Send start
+        # input("Press Enter to send Start...")
         rpc({"op": "start", "game_id": self.game_id, "player_id": self.player_id})
 
         # Wait for PLAYING
+        playing_state: Optional[Dict[str, Any]] = None
         while True:
             st = rpc({"op": "get_state", "game_id": self.game_id})
             if st.get("state", {}).get("status") == "PLAYING":
+                playing_state = st["state"]
                 break
             time.sleep(0.3)
+
+        # Fallback: pre-load was skipped (no turn_order in ready state).
+        # Catch up now so move 1 still hits a warm model.
+        if self.agent is None and playing_state:
+            play_turn_order = playing_state.get("turn_order", [])
+            if play_turn_order:
+                self._ensure_agent(num_players=len(play_turn_order))
+                self._warmup(playing_state)
 
         print("=== GAME STARTED ===")
 
@@ -367,7 +421,15 @@ if __name__ == "__main__":
         help="Action sampling temperature. Competition default 0.3 (winner of "
              "comparison grid — best 6P pins=8.6 with c_puct=1.0).",
     )
-    parser.add_argument("--time-limit", type=float, default=None)
+    parser.add_argument(
+        "--time-limit", type=float, default=1.5,
+        help="Hard wall-clock cap on MCTS per move (seconds). Default 1.5 — "
+             "leaves ~0.5s headroom under a 2s/turn server budget for RPC "
+             "overhead. When set, MCTS ignores --mcts-sims and runs as many "
+             "simulations as fit in the budget. For tournaments with a 10s/turn "
+             "budget pass --time-limit 9 (or similar) to use the full sims=15 "
+             "locked config.",
+    )
     parser.add_argument("--device", default="cpu")
     parser.add_argument(
         "--host", default=HOST,
