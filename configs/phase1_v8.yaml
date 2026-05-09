@@ -1,0 +1,97 @@
+# Phase 1 v8 — targeted reward + opponent fix.
+#
+# v7's diagnosis (auto-stopped at iter 5, 4p_vs_greedy_pins regressed
+# 10 -> 8.5) was: 100% of self-play games hit max_moves with no
+# decisive winner. Two concrete causes:
+#
+#   1) Random agents in the opponent pool leave their starting triangle
+#      full -> the RL agent can't fill its goal triangle -> no win.
+#   2) When games end at MAX_MOVES, terminal value G = score / 1300 is
+#      flat-positive for everyone in symmetric games -> no per-player
+#      differentiation -> noisy policy gradient.
+#
+# Two changes from v7:
+#   - opponent: mixed_strong  (drops RandomAgent)
+#   - use_score_margin: true  (terminal G = (my_score - mean_opp) / 1300)
+#
+# Everything else identical to v7. Same gates, same auto-stop. If this
+# doesn't show clean improvement by iter 5, the next negative result is
+# the answer: RL is structurally not the right tool here, and the paper
+# concludes with two specific failed pilots instead of one.
+#
+# Launch (school machine, in tmux):
+#   python3.10 train.py \
+#     --config configs/phase1_v8.yaml \
+#     --resume checkpoints/phase_0c_v1/model_best.pt \
+#     --kl-anchor checkpoints/phase_0c_v1/model_best.pt \
+#     --device cuda \
+#     --phase rl_refine \
+#     --run-name phase1_v8
+
+model:
+  num_res_blocks: 6
+  trunk_channels: 128
+  policy_channels: 32
+  value_hidden: 128
+
+training:
+  num_iterations: 25
+  num_games_per_iteration: 20
+  num_players: "2,4,6"
+  batch_size: 256
+  epochs_per_iteration: 5
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  policy_loss_weight: 1.0
+  value_loss_weight: 1.0
+  buffer_capacity: 200000
+  min_buffer_size: 512
+  temperature: 1.0
+  checkpoint_dir: checkpoints
+  checkpoint_every: 5
+  eval_every: 5
+  device: cuda
+  freeze_policy: false
+  kl_anchor_weight: 0.3
+  opponent: mixed_strong
+  include_anchor_as_opponent: true
+  max_moves_per_player: 200
+  gate_baseline:
+    self_play_pins: 9.5
+    4p_vs_greedy_pins: 10.0
+    2p_vs_heuristic_pins: 10.0
+  gate_tolerance: 1.0
+  gate_grace_iterations: 5
+
+mcts:
+  num_simulations: 300
+  c_puct: 1.5
+  temperature: 1.0
+
+rewards:
+  win_reward: 1.0
+  loss_reward: -1.0
+  draw_reward: -0.5
+  max_moves_reward: -0.3
+  pin_goal_weight: 0.3
+  distance_weight: 0.01
+  lagging_weight: -0.005
+  home_exit_weight: 0.05
+  mobility_weight: 0.001
+  use_score_terminal: true
+  score_normalization: 1300.0
+  # v8 change: differentiate terminal value by score margin so long games
+  # don't all collapse to G ~ 0.5 for every player.
+  use_score_margin: true
+
+evaluation:
+  kind: phase1
+  matchups:
+    - 2p_vs_random
+    - 2p_vs_greedy
+    - 2p_vs_heuristic
+    - 2p_self_play
+    - 4p_vs_greedy
+    - 6p_vs_greedy
+  games_per_matchup: 4
+  mcts_sims: 50

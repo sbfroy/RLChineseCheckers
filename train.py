@@ -320,6 +320,14 @@ def main():
         if opp_name == "mixed":
             opponent = [RandomAgent(), GreedyProgressAgent(), HeuristicAgent()]
             print(f"  Opponent: mixed pool ({len(opponent)} agents, sampled per iteration)")
+        elif opp_name == "mixed_strong":
+            # v8: drop RandomAgent. Random opponents leave their starting
+            # triangle full of unmoved pins, so the RL agent can't fill its
+            # goal -> games hit max_moves with no winner -> no terminal
+            # learning signal. Greedy + Heuristic + anchor all clear their
+            # home triangles, so games actually finish.
+            opponent = [GreedyProgressAgent(), HeuristicAgent()]
+            print(f"  Opponent: mixed_strong pool ({len(opponent)} agents, sampled per iteration)")
         else:
             opp_cls = opp_map.get(opp_name)
             if opp_cls:
