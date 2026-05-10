@@ -176,6 +176,11 @@ def main():
                         help="Match deployed agent (c=1.0) so the student "
                              "imitates a stronger version of the same prior.")
     parser.add_argument("--num-players-list", type=str, default="2,4,6")
+    parser.add_argument("--num-players-weights", type=str, default="1,1,1",
+                        help="Comma-separated sampling weights for --num-players-list. "
+                             "Default '1,1,1' = uniform. '1,2,3' weights 6P 3x more "
+                             "than 2P — gets more decisive 6P games into the dataset, "
+                             "since 6P has the lowest finish rate.")
     parser.add_argument("--self-play-frac", type=float, default=0.5,
                         help="Fraction of games where all seats are teacher. "
                              "Rest are 1-teacher vs sampled baseline.")
@@ -193,12 +198,19 @@ def main():
     os.makedirs(args.output_dir, exist_ok=True)
 
     num_players_list = [int(x) for x in args.num_players_list.split(",")]
+    player_weights = [float(w) for w in args.num_players_weights.split(",")]
+    if len(player_weights) != len(num_players_list):
+        raise ValueError(
+            f"--num-players-weights must have same length as --num-players-list "
+            f"(got {len(player_weights)} weights for {len(num_players_list)} player counts)"
+        )
 
     print(f"Distillation data generator")
     print(f"  Teacher: {args.teacher}")
     print(f"  Output:  {args.output_dir}")
     print(f"  Games: {args.num_games} | sims: {args.mcts_sims} | c_puct: {args.c_puct}")
-    print(f"  Players: {num_players_list} | self_play_frac: {args.self_play_frac}")
+    print(f"  Players: {num_players_list} | weights: {player_weights} | "
+          f"self_play_frac: {args.self_play_frac}")
     print(f"  Device: {args.device}")
 
     model = load_teacher(args.teacher, args.device)
@@ -217,8 +229,10 @@ def main():
     t0 = time.time()
 
     for g in range(args.num_games):
-        # Round-robin player count, randomised mode.
-        num_players = num_players_list[g % len(num_players_list)]
+        # Weighted-random player count (was round-robin pre-2026-05-10).
+        # Weights let us oversample 6P, which has the lowest finish rate and
+        # therefore contributes the fewest decisive examples per game.
+        num_players = random.choices(num_players_list, weights=player_weights, k=1)[0]
         mode = "self_play" if random.random() < args.self_play_frac else "mixed"
 
         records, stats = play_game(
@@ -232,6 +246,14 @@ def main():
             mode=mode,
             baseline_pool=baseline_pool,
         )
+        # Tag each move with player count + game outcome so the trainer can
+        # filter to finished-only games (--filter-unfinished). Stagnant 6P
+        # positions in unfinished games have flat visit distributions and
+        # were the main cause of the 6P regression in distill_v1.
+        finished = stats["finished_with_winner"]
+        for r in records:
+            r["player_count"] = num_players
+            r["game_finished"] = finished
         all_records.extend(records)
         game_stats.append(stats)
 
@@ -261,6 +283,8 @@ def main():
     scalars = np.stack([r["scalars"] for r in all_records])
     mask = np.stack([r["mask"] for r in all_records])
     policy_target = np.stack([r["policy_target"] for r in all_records])
+    player_count = np.array([r["player_count"] for r in all_records], dtype=np.int32)
+    game_finished = np.array([r["game_finished"] for r in all_records], dtype=bool)
 
     out_path = os.path.join(args.output_dir, "data.npz")
     np.savez_compressed(
@@ -269,6 +293,8 @@ def main():
         scalars=scalars,
         mask=mask,
         policy_target=policy_target,
+        player_count=player_count,
+        game_finished=game_finished,
     )
 
     finished = sum(1 for s in game_stats if s["finished_with_winner"])
@@ -280,6 +306,12 @@ def main():
         by_np.setdefault(s["num_players"], 0)
         by_np[s["num_players"]] += 1
 
+    finished_by_np: dict = {}
+    for s in game_stats:
+        if s["finished_with_winner"]:
+            finished_by_np.setdefault(s["num_players"], 0)
+            finished_by_np[s["num_players"]] += 1
+
     metadata = {
         "teacher_checkpoint": args.teacher,
         "num_games_played": len(game_stats),
@@ -288,10 +320,12 @@ def main():
         "c_puct": args.c_puct,
         "self_play_frac": args.self_play_frac,
         "num_players_list": num_players_list,
+        "num_players_weights": player_weights,
         "max_moves_per_player": args.max_moves_per_player,
         "games_finished_with_winner": finished,
         "games_by_mode": by_mode,
         "games_by_num_players": by_np,
+        "finished_games_by_num_players": finished_by_np,
         "elapsed_seconds": round(elapsed, 1),
         "generated_at": datetime.now().isoformat(),
         "seed": args.seed,

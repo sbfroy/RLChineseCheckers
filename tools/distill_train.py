@@ -84,6 +84,12 @@ def main():
                         help="Path to data.npz from distill_generate.py")
     parser.add_argument("--run-name", type=str, default="phase_0c_v1_distilled")
     parser.add_argument("--checkpoint-dir", type=str, default="checkpoints")
+    parser.add_argument("--filter-unfinished", action="store_true",
+                        help="Drop moves from games that hit max_moves and never "
+                             "reached a clean winner. Removes stagnant-position "
+                             "noise (the main cause of the distill_v1 6P "
+                             "regression). Requires data generated with the "
+                             "post-2026-05-10 generator (game_finished tag in npz).")
     parser.add_argument("--epochs", type=int, default=30)
     parser.add_argument("--batch-size", type=int, default=256)
     parser.add_argument("--lr", type=float, default=5e-5,
@@ -139,6 +145,36 @@ def main():
     policy_target = torch.from_numpy(npz["policy_target"])
     N = spatial.shape[0]
     print(f"  {N:,} experiences loaded")
+
+    npz_keys = set(npz.files)
+    has_finished = "game_finished" in npz_keys
+    has_player_count = "player_count" in npz_keys
+    player_count_np = npz["player_count"] if has_player_count else None
+
+    if args.filter_unfinished:
+        if not has_finished:
+            raise ValueError(
+                "--filter-unfinished requires data generated with the "
+                "post-2026-05-10 generator. Re-run distill_generate.py to "
+                "produce a dataset with the game_finished tag."
+            )
+        finished_np = npz["game_finished"].astype(bool)
+        keep = torch.from_numpy(finished_np)
+        spatial = spatial[keep]
+        scalars = scalars[keep]
+        mask = mask[keep]
+        policy_target = policy_target[keep]
+        if player_count_np is not None:
+            player_count_np = player_count_np[finished_np]
+        kept = int(keep.sum().item())
+        print(f"  --filter-unfinished: keeping {kept:,} of {N:,} experiences "
+              f"({kept / max(N, 1):.1%}) from games that finished with a winner")
+        N = spatial.shape[0]
+
+    if player_count_np is not None:
+        unique, counts = np.unique(player_count_np, return_counts=True)
+        breakdown = ", ".join(f"{int(p)}P={int(c):,}" for p, c in zip(unique, counts))
+        print(f"  Per-player-count: {breakdown}")
 
     # Sanity: target distributions should be ~normalised (MCTS visit counts
     # were normalised by `MCTSNode.best_action` before being returned).
