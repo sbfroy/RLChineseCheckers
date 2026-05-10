@@ -1,0 +1,27 @@
+{
+  "teacher_checkpoint": "checkpoints/phase_0c_v1/model_best.pt",
+  "num_games_played": 150,
+  "num_experiences": 47288,
+  "mcts_sims": 300,
+  "c_puct": 1.0,
+  "self_play_frac": 0.5,
+  "num_players_list": [
+    2,
+    4,
+    6
+  ],
+  "max_moves_per_player": 200,
+  "games_finished_with_winner": 88,
+  "games_by_mode": {
+    "mixed": 70,
+    "self_play": 80
+  },
+  "games_by_num_players": {
+    "2": 50,
+    "4": 50,
+    "6": 50
+  },
+  "elapsed_seconds": 49022.7,
+  "generated_at": "2026-05-10T02:57:55.248533",
+  "seed": 42
+}
